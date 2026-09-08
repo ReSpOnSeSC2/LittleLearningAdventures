@@ -22,6 +22,10 @@ Each learner has separate local progress. The app follows the workbook's day num
 
 Vivian's revised printouts are almost wordless: large dotted **Vivian**, a letter, a number, a shape, and a simple coloring picture. Each day is exactly two pages. The longer spoken directions and play ideas are in the separate parent guide. Her existing app games are preserved.
 
+### Vivian's tracing play
+
+In **Make your marks**, choose today's line, her name, a letter A–Z, a number 0–9, a shape, or blank paper. **Free draw** lets her make marks anywhere. **Follow path** starts at the pink dot and follows each stroke in order; marks outside the guide are ignored. Use the wider guide first and the narrower option when she wants a challenge. Her name is shown one large letter at a time. She can switch modes, clear the page, or move on whenever she likes. Anastasia keeps her kindergarten writing activity.
+
 No accounts, ads, microphone recording, analytics, or progress uploads. Progress is stored on the device in localStorage. It does not automatically sync between phones. Export a backup before clearing site data or moving phones. Full names are kept out of this public app and its daily PDF files.
 
 ## Development and publication

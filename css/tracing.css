@@ -1,0 +1,34 @@
+.tracing-panel{--trace-line:#e5d5df;--trace-soft:#fff1f8;--trace-ink:#30243d;display:block}
+.tracing-panel [hidden]{display:none!important}
+.tracing-pickers{display:flex;align-items:flex-end;gap:10px;margin-bottom:12px}
+.tracing-pickers label{display:flex;flex-direction:column;gap:4px;font-size:.79rem;font-weight:750;color:var(--muted,#71647b);min-width:0}
+.tracing-picker-main{flex:1}.tracing-picker-detail{flex:0 1 112px}
+.tracing-pickers select{width:100%;min-width:0;min-height:48px;border:1.5px solid var(--trace-line);border-radius:13px;padding:9px 25px 9px 11px;background:#fff;color:var(--trace-ink);font-size:.94rem;font-weight:750}
+.tracing-modes{display:flex;gap:8px}
+.tracing-modes button{flex:1;min-width:0;min-height:48px;padding:10px 7px;border:1.5px solid var(--trace-line);border-radius:14px;background:#fff;color:var(--trace-ink);font-size:.95rem;font-weight:800}
+.tracing-modes button[aria-pressed=true]{border-color:var(--pink,#c82978);background:var(--pink-light,#ffe1ef);color:var(--pink-dark,#a31960)}
+.tracing-modes button:disabled{opacity:.45}
+.tracing-width{display:flex;align-items:center;justify-content:flex-end;gap:7px;margin:10px 0 0}
+.tracing-width span{font-size:.8rem;color:var(--muted,#71647b);margin-right:auto}
+.tracing-width button{min-height:48px;border:1px solid var(--trace-line);border-radius:12px;padding:8px 12px;background:#fff;color:var(--trace-ink);font-size:.85rem;font-weight:750}
+.tracing-width button[aria-pressed=true]{background:var(--trace-soft);border-color:var(--pink,#c82978);color:var(--pink-dark,#a31960)}
+.tracing-name-row{display:flex;align-items:center;gap:10px;margin-top:12px}
+.tracing-name-progress{display:flex;flex:1;justify-content:center;gap:3px;min-width:0}
+.tracing-name-progress span{display:grid;place-items:center;flex:1;max-width:34px;height:37px;border-radius:10px;font-size:1.3rem;font-weight:750;color:#a28b9b}
+.tracing-name-progress span.current{background:var(--pink-light,#ffe1ef);color:var(--pink-dark,#a31960);outline:1px solid var(--pink,#c82978)}
+.tracing-name-progress span.visited{color:var(--teal,#147a75)}
+.tracing-name-next{min-height:48px;flex-shrink:0;border-radius:12px;padding:8px 10px;border:1px solid var(--trace-line);background:#fff;color:var(--pink-dark,#a31960);font-size:.8rem;font-weight:800}
+.tracing-hint-row{display:flex;align-items:center;gap:8px;margin:13px 0 11px}
+.tracing-instruction{flex:1;text-align:center;font-size:.9rem!important;line-height:1.4;margin:0!important;color:var(--muted,#71647b)}
+.tracing-surface{position:relative;overflow:hidden;background:#fff;border:2px dashed #dac5d5;border-radius:21px}
+.tracing-canvas{display:block;width:100%;height:280px;min-height:235px;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;cursor:crosshair}
+.tracing-demo{position:static;flex-shrink:0;min-height:48px;padding:7px 10px;border:1px solid var(--trace-line);border-radius:12px;background:#fff;color:var(--pink-dark,#a31960);font-size:.76rem;font-weight:750}
+.tracing-tools{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:11px}
+.tracing-pens{display:flex;gap:3px}
+.tracing-pen{display:grid;place-items:center;width:48px;height:48px;padding:6px;border-radius:50%;background:transparent}
+.tracing-pen span{display:block;width:29px;height:29px;background:var(--pen-color);border-radius:50%;border:2px solid white;box-shadow:0 0 0 1px #e1cfda}
+.tracing-pen[aria-pressed=true] span{box-shadow:0 0 0 2px var(--trace-ink)}
+.tracing-clear{min-height:48px;padding:8px;border:1px solid var(--trace-line);border-radius:12px;background:#fff;color:var(--muted,#71647b);font-size:.86rem;font-weight:750}
+.tracing-status{min-height:23px;text-align:center;color:var(--teal,#147a75);font-size:.85rem!important;line-height:1.4;margin:9px 0 0!important}
+.tracing-measure{position:absolute;width:0;height:0;overflow:hidden;pointer-events:none}
+@media(max-width:370px){.tracing-picker-detail{flex-basis:91px}.tracing-pickers{gap:7px}.tracing-name-next{font-size:.73rem;padding:8px}.tracing-name-row{gap:6px}.tracing-canvas{height:260px}}

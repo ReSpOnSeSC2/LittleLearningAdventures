@@ -17,4 +17,14 @@ for(const id of ['anastasia','vivian']){
   }
 }
 const sw=await readFile(resolve(root,'sw.js'),'utf8');const match=sw.match(/const APP_SHELL = (\[[\s\S]*?\]);/);assert(match,'Offline manifest missing');const shell=JSON.parse(match[1]);for(const path of shell)if(!['./','./index.html'].includes(path))await stat(resolve(root,path));
-console.log(`Verified: 120 lessons, ${trials} math trials, 120 printable day files, install manifest/icons and every offline asset.`);
+const tracing=JSON.parse(await readFile(resolve(root,'data/tracing.json'),'utf8'));
+assert.equal(Object.keys(tracing.letters).filter(k=>/^[A-Z]$/.test(k)).length,26);assert.equal(Object.keys(tracing.numbers).length,10);
+for(const symbol of 'Vivian')assert(tracing.letters[symbol]);
+for(const path of ['down','across','curve','circle','zigzag'])assert(tracing.paths[path]);
+let models=0;
+for(const group of Object.values(tracing))for(const model of Object.values(group)){
+  models++;assert.equal(model.start.length,2);assert(model.strokes.length);
+  assert.deepEqual(model.strokes[0][0].slice(1),model.start);
+  for(const stroke of model.strokes){assert(stroke.length);assert.equal(stroke[0][0],'M');for(const [command,...values] of stroke){assert.equal(values.length,{M:2,L:2,C:6,Z:0}[command]);assert(values.every(n=>Number.isFinite(n)&&n>=0&&n<=100));}}
+}
+console.log(`Verified: 120 lessons, ${trials} math trials, 120 printable day files, ${models} tracing models, install manifest/icons and every offline asset.`);
