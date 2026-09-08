@@ -7,3 +7,26 @@
 .math-progress{font-size:.8125rem;color:var(--muted);text-align:center;margin-bottom:9px}.math-hear{display:none}.math-visual{margin-top:18px}.math-group{margin:12px 0}.math-group-label{font-size:.875rem;color:var(--muted);margin:0 0 8px}.math-count-tip,.math-fill-tip{font-size:.875rem;color:var(--muted);margin:10px 0 14px;text-align:center}.math-counter.button{border:2px solid #d491b5;border-radius:16px;background:#fff;color:#df79aa;box-shadow:none;position:relative;min-height:48px!important;aspect-ratio:1;padding:3px}.math-counter .math-shape{width:32px;height:32px;max-width:85%;max-height:85%}.math-counter.math-counted{border-color:var(--teal);background:var(--teal-light);color:var(--teal)}.math-count-number{font-size:1.6rem}.math-cross{position:absolute;color:#72233e;font-size:2.7rem;line-height:1;inset:0;display:grid;place-items:center}.math-count-status{text-align:center;color:var(--teal);font-size:1rem;font-weight:800;min-height:24px}.math-reset-count.button,.math-help.button,.math-assisted.button{font-size:.875rem;min-height:44px!important;box-shadow:none;padding:9px 13px;background:#fff;color:var(--muted);border:1px solid var(--line);border-radius:13px;margin:7px 8px 0 0}.math-reset-count.button{display:block;margin:9px auto;background:transparent;border:0;text-decoration:underline}.math-choice.button{box-shadow:0 3px 0 var(--line);background:var(--page);color:var(--ink);border:2px solid var(--line);min-height:82px!important;padding:12px 6px;flex-direction:column}.math-choice .math-choice-label{font-size:inherit;line-height:1.3}.math-choice:disabled{opacity:.68}.math-next{width:100%;font-size:1.1rem;margin-top:18px}.math-empty{text-align:center;padding:16px}.math-model{background:var(--teal-light);border-radius:15px;padding:15px;margin:12px 0;font-size:1rem}.math-operator{text-align:center;font-size:2.3rem;line-height:1;margin:8px 0;color:var(--pink)}.math-missing{color:var(--pink);padding:7px 11px;background:var(--pink-light);border-radius:12px;font-weight:800}.math-number-token{padding:7px 11px;border:1px solid var(--line);border-radius:12px}.math-tenframe{padding:7px;border:1px solid #cebecb;border-radius:15px}.math-frame-empty.button{background:#fff;color:var(--muted);box-shadow:none;min-height:48px!important;padding:3px;font-size:1.5rem}.math-frame-empty.math-filled{background:var(--teal-light);border-color:var(--teal)!important;color:var(--teal)}.math-sort-items{justify-content:center}.math-parent-guided{font-size:1rem;margin:18px 0}.math-measure{padding:10px 0}.math-pattern .math-shape{width:45px;height:45px}.math-choice .math-shape{width:46px;height:46px}.math-visual>.math-shape{width:130px;height:130px;margin:22px auto}
 
 .buddy-face{width:42px;height:42px;border-radius:50%;object-fit:cover}.listen-button{padding:6px 16px 6px 7px}.letter-word{display:block;margin:6px auto 18px;background:var(--pink-light);border-radius:16px;padding:10px 19px;color:var(--pink-dark);min-height:48px}.buddy-speaking .buddy-face{animation:buddy-talk .7s ease-in-out infinite alternate;box-shadow:0 0 0 3px #f6c8df}.buddy-cheer{animation:buddy-cheer .9s ease-in-out}@keyframes buddy-talk{to{transform:translateY(-3px) rotate(4deg)}}@keyframes buddy-cheer{30%{transform:translateY(-13px) rotate(-7deg)}65%{transform:translateY(-5px) rotate(7deg)}}@media(prefers-reduced-motion:reduce){.buddy-speaking .buddy-face,.buddy-cheer{animation:none}}
+
+/* Keep short phone activities and their Next button close together. Longer
+   stories, drawing instructions, and math still use the normal page scroll. */
+@media (max-width:460px) {
+  .app-shell:has(.lesson-bar) {padding-bottom:calc(16px + env(safe-area-inset-bottom))}
+  .app-shell:has(.lesson-bar) .topbar {height:60px}
+  .lesson-bar {margin-bottom:8px}
+  .step-track {margin-bottom:12px}
+  .lesson-title {margin-bottom:12px}
+  .lesson-title .eyebrow {margin-bottom:4px}
+  .lesson-title .listen-button {margin-top:8px;min-height:48px}
+  #activity.activity-card {padding:14px;margin-bottom:12px}
+  #activity .activity-prompt {margin-bottom:12px}
+  #activity .letter-model {margin-top:0;margin-bottom:0}
+  #activity .letter-word {margin-bottom:10px}
+  #activity .choices {margin-top:12px;margin-bottom:8px}
+  #activity .details-note {padding-top:8px;margin-top:10px}
+  #activity .details-note summary {min-height:48px}
+  #lesson-actions .activity-footer {margin-top:12px}
+  .app-shell:has(.lesson-bar) .quiet-help {min-height:48px}
+  .app-shell:has(.lesson-bar) .color-dot {width:48px;height:48px}
+  .lesson-end-space {height:8px}
+}

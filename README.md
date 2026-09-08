@@ -20,6 +20,8 @@ Each learner has separate local progress. The app follows the workbook's day num
 
 **Parents** lets you repeat any day, download its two printable pages, choose a voice, or export/restore progress. Download a day's PDF while online; previously downloaded PDFs may also work offline. Lessons and pictures are cached automatically.
 
+Vivian's revised printouts are almost wordless: large dotted **Vivian**, a letter, a number, a shape, and a simple coloring picture. Each day is exactly two pages. The longer spoken directions and play ideas are in the separate parent guide. Her existing app games are preserved.
+
 No accounts, ads, microphone recording, analytics, or progress uploads. Progress is stored on the device in localStorage. It does not automatically sync between phones. Export a backup before clearing site data or moving phones. Full names are kept out of this public app and its daily PDF files.
 
 ## Development and publication
