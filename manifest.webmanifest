@@ -1,0 +1,19 @@
+{
+  "id": "./",
+  "name": "Little Learning Adventures",
+  "short_name": "Little Learning",
+  "description": "Daily letters, numbers, stories, drawing, and play for two little learners.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#fff6fb",
+  "theme_color": "#c82978",
+  "lang": "en-US",
+  "categories": ["education", "kids"],
+  "icons": [
+    {"src":"./icons/icon-192.png","sizes":"192x192","type":"image/png","purpose":"any"},
+    {"src":"./icons/icon-512.png","sizes":"512x512","type":"image/png","purpose":"any"},
+    {"src":"./icons/icon-maskable-512.png","sizes":"512x512","type":"image/png","purpose":"maskable"}
+  ]
+}
