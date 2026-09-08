@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'little-learning-v1';
+const CACHE_VERSION = 'little-learning-v2';
 const PDF_CACHE = 'little-learning-workbooks-v1';
 const APP_SHELL = ["./","./index.html","./css/app.css","./js/app.js","./js/core.js","./js/voice.js","./js/math-game.js","./data/anastasia.json","./data/vivian.json","./manifest.webmanifest","./images/anastasia-unicorn.png","./images/vivian-dinosaur.png","./icons/icon-192.png","./icons/icon-512.png","./icons/icon-maskable-512.png"];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE_VERSION).then(cache=>cache.addAll(APP_SHELL)));});
