@@ -2,6 +2,7 @@ import {readFile,stat,readdir} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import assert from 'node:assert/strict';
 import {getMathChoices,isMathAnswerCorrect} from '../js/math-game.js';
+import {planDay} from '../js/k36-core.js';
 const root=resolve(import.meta.dirname,'..');
 const manifest=JSON.parse(await readFile(resolve(root,'manifest.webmanifest'),'utf8'));
 assert.equal(manifest.display,'standalone');assert.equal(manifest.start_url,'./index.html');assert.equal(manifest.scope,'./');
@@ -27,4 +28,9 @@ for(const group of Object.values(tracing))for(const model of Object.values(group
   assert.deepEqual(model.strokes[0][0].slice(1),model.start);
   for(const stroke of model.strokes){assert(stroke.length);assert.equal(stroke[0][0],'M');for(const [command,...values] of stroke){assert.equal(values.length,{M:2,L:2,C:6,Z:0}[command]);assert(values.every(n=>Number.isFinite(n)&&n>=0&&n<=100));}}
 }
+const k36raw=await readFile(resolve(root,'data/k36.json'),'utf8');assert(!/Layman/i.test(k36raw));const k36=JSON.parse(k36raw);assert.equal(k36.weeks.length,36);
+const pics=JSON.parse(await readFile(resolve(root,'data/pics.json'),'utf8'));assert(Object.keys(pics).length>300);
+for(const f of ['fonts/andika-400.woff2','fonts/andika-700.woff2','fonts/OFL-Andika.txt','NOTICE.md'])await stat(resolve(root,f));
+let kItems=0;for(let w=1;w<=36;w++)for(let d=1;d<=5;d++){const p=planDay(k36,w,d,{targets:['s','r']});for(const s of p.stations){assert(s.items.length);kItems+=s.items.length;}}
+console.log(`Verified: kindergarten adventure with 36 weeks, 180 days and ${kItems} game items.`);
 console.log(`Verified: 120 lessons, ${trials} math trials, 120 printable day files, ${models} tracing models, install manifest/icons and every offline asset.`);

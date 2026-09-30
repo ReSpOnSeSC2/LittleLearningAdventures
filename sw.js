@@ -1,6 +1,6 @@
-const CACHE_VERSION = 'little-learning-v5';
+const CACHE_VERSION = 'little-learning-v6';
 const PDF_CACHE = 'little-learning-workbooks-v2';
-const APP_SHELL = ["./","./index.html","./css/app.css","./css/tracing.css","./js/app.js","./js/core.js","./js/voice.js","./js/math-game.js","./js/tracing-engine.js","./js/tracing-panel.js","./data/anastasia.json","./data/vivian.json","./data/tracing.json","./manifest.webmanifest","./images/anastasia-unicorn.png","./images/vivian-dinosaur.png","./icons/icon-192.png","./icons/icon-512.png","./icons/icon-maskable-512.png"];
+const APP_SHELL = ["./","./index.html","./css/app.css","./css/tracing.css","./js/app.js","./js/core.js","./js/voice.js","./js/math-game.js","./js/tracing-engine.js","./js/tracing-panel.js","./js/k36-core.js","./js/k36-ui.js","./css/k36.css","./data/k36.json","./data/pics.json","./fonts/andika-400.woff2","./fonts/andika-700.woff2","./data/anastasia.json","./data/vivian.json","./data/tracing.json","./manifest.webmanifest","./images/anastasia-unicorn.png","./images/vivian-dinosaur.png","./icons/icon-192.png","./icons/icon-512.png","./icons/icon-maskable-512.png"];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE_VERSION).then(cache=>cache.addAll(APP_SHELL.map(url=>new Request(url,{cache:'reload'})))));});
 self.addEventListener('activate',event=>{event.waitUntil((async()=>{
   if((await caches.keys()).includes('little-learning-workbooks-v1')){
