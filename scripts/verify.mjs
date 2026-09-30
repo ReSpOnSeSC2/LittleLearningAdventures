@@ -48,7 +48,7 @@ for(const f of ['js/mf-core.js','js/mf-world.js','js/mf-battle.js','js/mf-ui.js'
 // Vivian's 36-week preschool path: data, pictures and offline files
 const v36raw=await readFile(resolve(root,'data/v36.json'),'utf8');assert(!/Layman/i.test(v36raw));const v36=JSON.parse(v36raw);assert.equal(v36.weeks.length,36);assert.equal(v36.friends.length,36);
 let vItems=0;for(let w=1;w<=36;w++)for(let d=1;d<=5;d++){const p=planV36(v36,w,d);assert(p.stations.length>=3);for(const s of p.stations){const items=v36Items(v36,w,d,s.kind,s.mode);assert(items.length,`v36 ${w}-${d} ${s.id}`);vItems+=items.length;for(const it of items)for(const ic of v36Icons(it))assert(pics[ic],`v36 picture ${ic}`);}}
-for(const f of ['js/v36-core.js','js/v36-ui.js','js/v36-games.js','js/v36-audio.js','js/v36-art.js','css/v36.css','data/v36.json'])assert(shell.includes(`./${f}`),`${f} missing from the offline list`);
+for(const f of ['js/v36-core.js','js/v36-ui.js','js/v36-games.js','js/v36-audio.js','js/v36-art.js','js/v36-island.js','js/trace-pad.js','data/hw.json','css/v36.css','data/v36.json'])assert(shell.includes(`./${f}`),`${f} missing from the offline list`);
 assert.match(await readFile(resolve(root,'index.html'),'utf8'),/css\/v36\.css/,'v36 stylesheet must be linked');
 console.log(`Verified: kindergarten adventure with 36 weeks, 180 days and ${kItems} game items.`);
 console.log(`Verified: Vivian's preschool path with 36 weeks, 180 days, ${vItems} game items and 36 friends to hatch.`);

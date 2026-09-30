@@ -240,3 +240,13 @@
 @keyframes k-hearpulse{0%,100%{outline-color:#fab005}50%{outline-color:#ffe066}}
 .k-tapnote{text-align:center;font-size:.9rem;color:var(--muted);margin:10px 0 0}
 .k-checkbtn:disabled{box-shadow:none}
+
+/* handwriting trace pad (letters on the four writing lines) */
+.k-tglyph{font:700 2.2rem/1 Andika,system-ui;color:#c2255c;vertical-align:-4px}
+.k-tracehead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 8px}
+.k-tkey{display:flex;align-items:center;gap:8px;background:#fff0f6;border:2px solid #fcc2d7;border-radius:999px;padding:4px 14px 4px 6px;font:700 1.1rem Andika,system-ui;color:var(--ink)}
+.k-tkeypic{width:40px;height:40px}
+.k-demo{background:#e3fafc;color:#0b7285;border:2px solid #99e9f2;border-radius:999px;padding:8px 14px;font-weight:850;min-height:46px;margin-left:auto}
+.k-tracepad{width:100%}
+.tp-box{position:relative;width:100%;height:min(62vh,340px);border-radius:22px;background:#fff;border:3px solid #e3fafc;overflow:hidden;touch-action:none}
+.tp-canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}

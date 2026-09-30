@@ -8,6 +8,7 @@ import {planDay, defaultK36, normalizeK36, completeStation, isDayDone, awardStic
 const root = resolve(import.meta.dirname, '..');
 const data = JSON.parse(await readFile(resolve(root, 'data/k36.json'), 'utf8'));
 const pics = JSON.parse(await readFile(resolve(root, 'data/pics.json'), 'utf8'));
+const hw = JSON.parse(await readFile(resolve(root, 'data/hw.json'), 'utf8'));
 const TARGET_SETS = [[], ['s'], ['r', 'l'], ['th', 'sbl', 'rbl', 'k']];
 
 function iconsIn(item) {
@@ -91,6 +92,7 @@ test('every day of all 36 weeks plans valid, answerable games', () => {
         }
         if (it.type === 'readSentence') assert.ok(it.tokens.length >= 1);
         if (it.type === 'say') assert.ok(it.w && pics[it.i]);
+        if (it.type === 'trace') { assert.ok(hw.glyphs[it.ch], `W${w}D${d}: no handwriting strokes for ${it.ch}`); assert.equal(s.id, 'sounds'); assert.ok(data.sounds[it.sound]); }
       }
     }
     if (targets.length) {
@@ -184,4 +186,17 @@ test('listening picture games can be played by ear (every picture has a spoken w
     }
   }
   assert.ok(n > 300, `only ${n} listening games`);
+});
+
+test('handwriting: Ana traces every single-letter sound of the year, lowercase and capitals', () => {
+  const lower = new Set(), upper = new Set();
+  for (let w = 1; w <= WEEKS; w++) for (let d = 1; d <= DAYS; d++) for (const s of planDay(data, w, d).stations) for (const it of s.items)
+    if (it.type === 'trace') (it.ch === it.ch.toUpperCase() ? upper : lower).add(it.ch.toLowerCase());
+  const singles = new Set(data.weeks.flatMap(w => w.newg).filter(g => /^[a-z]$/.test(g)));
+  for (const g of singles) assert.ok(lower.has(g), `lowercase ${g} is never traced`);
+  assert.ok(upper.size >= 15, `only ${upper.size} capitals traced`);
+  for (const [ch, gl] of Object.entries(hw.glyphs)) {
+    assert.ok(gl.w > 0 && gl.strokes.length >= 1, ch);
+    for (const st of gl.strokes) { assert.equal(st[0][0], 'M', ch); for (const c of st) assert.ok(['M', 'L', 'C'].includes(c[0]), `${ch} ${c[0]}`); }
+  }
 });

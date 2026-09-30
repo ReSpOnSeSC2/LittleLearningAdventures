@@ -159,6 +159,58 @@ export function createGames(env) {
     document.querySelectorAll('[data-w]').forEach(b => b.addEventListener('click', () => { const w = it.words[Number(b.dataset.w)][0]; E.glow(b); E.hear(w); setTimeout(() => E.glow(null), 1200); }));
     E.next(`Hi, ${L}!`);
   }
+  function letterPic(it) {
+    const L = it.letter;
+    E.frame(`<div class="v-letterpic"><div class="v-ask"><span class="v-lpbig">${L}</span><span class="v-askbubble">${L} is for…</span></div>
+      <div class="v-choices v-lpchoices" style="--cols:3">${it.choices.map(([w, ic], i) => `<button class="v-lpchoice" data-i="${i}" aria-label="${esc(w)}">${pic(ic, 'v-lppic', w)}<span>${esc(w)}</span></button>`).join('')}</div></div>`,
+      {say: `${sayLetter(L)} is for... which one? Tap a picture.`});
+    choose([...document.querySelectorAll('.v-lpchoice')], {isRight: i => it.choices[i][0] === it.answer[0],
+      onRight: () => { E.feedback(`${L} is for ${it.answer[0]}!`, 'good'); praiseSay(`${sayLetter(L)} is for ${it.answer[0]}!`); E.next(); },
+      onWrong: (b, i) => { const w = it.choices[i][0]; const first = w[0].toUpperCase(); E.feedback(`${w[0].toUpperCase() + w.slice(1)} is for ${first}.`, 'try'); E.talk(`${w}. ${w} is for ${sayLetter(first)}. Find the one for ${sayLetter(L)}!`); }});
+  }
+  function nameFind(it) {
+    E.frame(`<div class="v-namefind"><div class="v-ask"><img src="${E.mascot}" alt=""><span class="v-askbubble">Find your name!</span></div>
+      <div class="v-choices v-namecards" style="--cols:1">${it.choices.map((c, i) => `<button class="v-namecard" data-i="${i}" aria-label="${esc(c)}">${esc(c)}</button>`).join('')}</div></div>`,
+      {say: 'Which one says your name? Find your name!'});
+    choose([...document.querySelectorAll('.v-namecard')], {isRight: i => it.choices[i] === it.name,
+      onRight: () => { E.feedback(`${it.name}! That’s you!`, 'good'); praiseSay('That says Vivian! That is your name!'); E.next(); },
+      onWrong: (b, i) => { const c = it.choices[i]; E.feedback(`That says ${c}.`, 'try'); E.talk(`That says ${c.charAt(0) + c.slice(1).toLowerCase()}. Your name starts with ${sayLetter('V')}!`); }});
+  }
+  function beat(it) {
+    const goal = it.goal || 8;
+    E.frame(`<div class="v-beat"><p class="v-prompt">Drum with Didi!</p>
+      <div class="v-beatstars" id="v-bstars">${Array.from({length: goal}, () => '<span></span>').join('')}</div>
+      <button class="v-drum" id="v-drum" aria-label="Drum"><span class="v-beatring" id="v-ring"></span>${pic('drum', 'v-drumpic')}</button>
+      <p class="v-tip">Tap the drum when the circle glows. Boom, boom, boom!</p>
+      <button class="button full" id="v-beatgo">${icon('sound')} Start the song</button></div>`,
+      {say: `Drum with Didi! Tap the drum to the beat of ${it.title}. Tap Start the song.`});
+    const plan = E.music.tunePlan(it.tune, it.lines); const spb = 60000 / plan.bpm;
+    const drum = document.querySelector('#v-drum'), ring = document.querySelector('#v-ring'), go = document.querySelector('#v-beatgo');
+    let start = 0, raf = 0, stop = null, got = 0, lastBeat = -1, done = false, t = null;
+    const stars = [...document.querySelectorAll('#v-bstars span')];
+    const finish = msg => { if (done) return; done = true; cancelAnimationFrame(raf); clearTimeout(t); stop?.(); E.sfx('sparkle'); E.feedback(msg, 'good'); E.talk(msg); E.firstTry(true); E.next('Boom! Next'); };
+    const tick = () => {
+      if (!start || done) return;
+      const ph = ((performance.now() - start) % spb) / spb;
+      ring.classList.toggle('on', ph < 0.22 || ph > 0.92);
+      raf = requestAnimationFrame(tick);
+    };
+    go.addEventListener('click', () => {
+      E.stopVoice(); go.hidden = true;
+      const quiet = !E.musicReady();
+      stop = quiet ? null : E.music.playTune(it.tune, it.lines, {onEnd: ok => { if (ok) finish(got >= goal / 2 ? 'Great drumming!' : 'Good drumming! Keep practicing the beat.'); }});
+      start = performance.now() + 150; raf = requestAnimationFrame(tick);
+      if (quiet) t = setTimeout(() => finish('Great drumming!'), spb * 24);      // no music: sing it and drum for a little while
+    });
+    drum.addEventListener('click', () => {
+      E.sfx('drum'); drum.classList.remove('hit'); void drum.offsetWidth; drum.classList.add('hit');
+      if (!start || done) return;
+      const since = performance.now() - start; const k = Math.round(since / spb); const off = Math.abs(since - k * spb);
+      if (off <= spb * 0.28 && k !== lastBeat && got < goal) { lastBeat = k; stars[got].classList.add('on'); got++; if (got >= goal) finish('You kept the beat!'); }
+    });
+    E.onCleanup(() => { cancelAnimationFrame(raf); clearTimeout(t); stop?.(); });
+    E.skip('We drummed on a pot');
+  }
   function letterFind(it) {
     const cols = it.choices.length === 4 ? 2 : 3;
     E.frame(`<div class="v-find"><div class="v-ask"><img src="${E.mascot}" alt=""><span class="v-askbubble">Find <b class="v-target">${it.target}</b></span></div>
@@ -473,16 +525,17 @@ export function createGames(env) {
 
   /* ---------------------------------------------------------------- tracing */
   function trace(it) {
-    const isLetter = it.model.kind === 'letter';
+    const isNumber = it.model.kind === 'number';
+    const isLetter = it.model.kind === 'letter' || isNumber;          // letters and numbers are both glyphs to trace
     const key = it.model.key;
-    const strokes = isLetter ? E.tracing?.letters?.[key]?.strokes : STROKE_PATHS[key];
+    const strokes = isNumber ? E.tracing?.numbers?.[key]?.strokes : isLetter ? E.tracing?.letters?.[key]?.strokes : STROKE_PATHS[key];
     const info = isLetter ? null : data.strokes[key];
     const title = isLetter ? `Trace ${key}` : info.title;
     const cue = isLetter ? `Start at the green dot. Follow the path. Lift your finger for each new line.` : key === 'dots' ? 'Tap each ladybug with one finger, one at a time!' : info.cue;
     E.frame(`<div class="v-trace"><div class="v-tracehead">${isLetter ? `<span class="v-tletter">${key}</span>` : pic(info.a, 'v-tpic')}<h2>${esc(title)}</h2><button class="v-demo" id="v-demo">▶ Show me</button></div>
       <div class="v-tracebox" id="v-tracebox"><canvas id="v-canvas" aria-label="Tracing space" role="img"></canvas><div class="v-traceart" id="v-traceart" aria-hidden="true"></div></div>
       <p class="v-tip" id="v-tstatus">${esc(cue)}</p></div>`,
-      {say: isLetter ? `Let's trace ${sayLetter(key)}! Start at the green dot.` : `${info.title}! ${cue.replace(/\bSTOP\b/, 'stop')}`});
+      {say: isNumber ? `Let's trace the number ${key}! Start at the green dot.` : isLetter ? `Let's trace ${sayLetter(key)}! Start at the green dot.` : `${info.title}! ${cue.replace(/\bSTOP\b/, 'stop')}`});
     if (!strokes) { E.next(); return; }
     const canvas = document.querySelector('#v-canvas'), boxEl = document.querySelector('#v-tracebox'), art = document.querySelector('#v-traceart'), status = document.querySelector('#v-tstatus');
     const g = canvas.getContext('2d');
@@ -563,7 +616,7 @@ export function createGames(env) {
     function finished() {
       if (done) return; done = true; E.firstTry(true); E.sfx('sparkle'); boxEl.classList.add('traced');
       status.textContent = ''; E.feedback(isLetter ? `You traced ${key}!` : 'You did it!', 'good');
-      praiseSay(isLetter ? `You traced ${sayLetter(key)}!` : 'You followed the path!'); E.sparkle(boxEl);
+      praiseSay(isNumber ? `You traced the number ${key}!` : isLetter ? `You traced ${sayLetter(key)}!` : 'You followed the path!'); E.sparkle(boxEl);
       E.next();
       E.actions(null)?.insertAdjacentHTML('beforeend', '<button class="quiet-help" id="v-tagain">Trace it again</button>');
       document.querySelector('#v-tagain')?.addEventListener('click', () => { boxEl.classList.remove('traced'); reset(); E.feedback(''); status.textContent = cue; });
@@ -700,6 +753,6 @@ export function createGames(env) {
     show();
   }
 
-  return {song, moveCard, freeze, letterMeet, letterFind, abcSong, letterPop, nameBuild, count, quick, give, zero, more, size, pattern, order, sortPick, measure, combine,
+  return {song, beat, letterPic, nameFind, moveCard, freeze, letterMeet, letterFind, abcSong, letterPop, nameBuild, count, quick, give, zero, more, size, pattern, order, sortPick, measure, combine,
     colorHunt, colorPick, colorMix, shapeThings, shapeFind, trace, story, sequence, talkWords, talkAsk, soundPlay, pageScene};
 }

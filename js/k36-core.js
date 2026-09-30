@@ -212,6 +212,18 @@ export function soundItems(data, W, r, {intro = false, review = false} = {}) {
     const g = (focus.length && !review && r() < 0.6) ? pick(focus, r) : pick(known, r);
     const it = matchItem(data, W, g, r, used); if (it) items.push(it);
   }
+  // Handwriting: trace the new letters (lowercase first, capital on Day 2), with the same strokes as the printed pages.
+  const rt = rng(W.n * 131 + (intro ? 1 : review ? 2 : 3));      // own random stream, so the other games stay the same
+  const singles = focus.filter(g => /^[a-z]$/.test(g)), knownSingles = known.filter(g => /^[a-z]$/.test(g));
+  if (intro) for (const g of singles.slice(0, 2)) items.push({type: 'trace', ch: g, sound: g});
+  else if (!review && singles.length) {
+    if (singles[2]) items.push({type: 'trace', ch: singles[2], sound: singles[2]});          // the third new letter, lowercase
+    const g = pick(singles, rt); items.push({type: 'trace', ch: g.toUpperCase(), sound: g});
+  }
+  else if (knownSingles.length) {
+    const g = pick(knownSingles, rt); items.push({type: 'trace', ch: g, sound: g});
+    if (review) { const c = pick(knownSingles.filter(x => x !== g), rt) || g; items.push({type: 'trace', ch: c.toUpperCase(), sound: c}); }   // review days add a capital
+  }
   return items;
 }
 

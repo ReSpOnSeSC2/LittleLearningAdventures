@@ -109,7 +109,8 @@ export const SFX = {
   swish() { const t = now(); noise(t, 0.25, {vol: 0.18, type: 'bandpass', f: 2200}); },
   whoosh() { const t = now(); noise(t, 0.35, {vol: 0.14, type: 'bandpass', f: 900}); },
   yum() { const t = now(); musicBox(N(72), t, 0.2, 0.12, master); musicBox(N(79), t + 0.1, 0.35, 0.12, master); },
-  step() { const t = now(); osc('sine', 140, t, 0.1, 0.18, master, {to: 80}); }
+  step() { const t = now(); osc('sine', 140, t, 0.1, 0.18, master, {to: 80}); },
+  drum() { const t = now(); osc('sine', 160, t, 0.28, 0.45, master, {to: 55}); noise(t, 0.05, {vol: 0.22, type: 'lowpass', f: 900}); }
 };
 export function setAudio({sfx, music} = {}) {
   if (typeof sfx === 'boolean') enabled.sfx = sfx;

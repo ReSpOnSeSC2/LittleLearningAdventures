@@ -15,7 +15,7 @@ If the browser offers only a shortcut, keep using the site and try Chrome's inst
 
 Anastasia's side follows the printed weekly packets (Week and Day are printed on every page). Each day has 4 or 5 short games on a path, about 2 to 4 minutes each:
 
-- **Sound Studio**: new letters and sounds with keyword pictures and a grown-up mouth cue, then "what letter does it start with?" games. Vowel teams and silent-e patterns in later weeks.
+- **Sound Studio**: new letters and sounds with keyword pictures and a grown-up mouth cue, then "what letter does it start with?" games, then **letter tracing**: each new letter (lowercase first, capitals on Day 2 and review days) on the same four writing lines and with the same strokes as her printed handwriting pages (`data/hw.json`). Vowel teams and silent-e patterns in later weeks.
 - **Listen & Play**: sound games with no print: rhymes, first, middle and last sounds, claps, counting sounds, putting word parts together and taking them apart.
 - **Read It**: tap each sound dot, swoop, then match the picture. Sentences are read with finger dots, heart-word marks, and a picture check. Every word is decodable with the sounds taught so far.
 - **Build Words**: spell with letter tiles in sound boxes, including the quiet e.
@@ -41,14 +41,18 @@ Finishing a day earns a sticker; each 6th week ends with a unit medal. Optional 
 
 Vivian's side follows her printed weekly packets (Week and Day are printed on every page). Six units: Hello, Vivi! · Dino Land · Music & Dance · Pets & Farm · Garden & Weather · Splash Zone; weeks 6, 12, 18, 24, 30 and 36 are celebration and review weeks. Each day has 3 or 4 short games on a path, about 2 to 4 minutes each, and every direction is spoken by the phone's voice (she never needs to read):
 
-- **Sing along**: the week's song with a music-box tune (traditional melodies such as Frère Jacques and Twinkle, Twinkle) while each line lights up; "Say the words" reads it line by line. The ABC song lights up every letter as it is sung.
-- **Letter fun**: meet the week's letter with three pictures, find it among 3 or 4 letters (very different letters first, one look-alike later in the year), pop letter bubbles, and build **VIVIAN** with letter tiles.
+- **Sing along**: the week's song with a music-box tune (traditional melodies such as Frère Jacques and Twinkle, Twinkle) while each line lights up; "Say the words" reads it line by line; then **drum with Didi** to the beat. The ABC song lights up every letter as it is sung.
+- **Letter fun** and **My name**: meet the week's letter with three pictures, match the letter to its picture, find it among 3 or 4 letters (very different letters first, one look-alike later in the year), pop letter bubbles, build **VIVIAN** with letter tiles and pick her name out from other names.
 - **Count with Didi** and **Number game**: touch-counting with a number for each tap, "how many?" with numerals and dot patterns, give Didi exactly N things (take extras back), quick looks, zero, more, big and little, patterns, first and last, sorting, sink or float, full and empty, and one more.
 - **Colors** and **Shapes**: color hunts, painting a gray picture with the right color, mixing two colors, meeting a shape through real things, and shape finds.
-- **Trace it**: wide finger paths for the week's line (rain, hills, waves, zigzags, spirals and more) and letters, with a green start dot, a "Show me" demo, and pictures at the start and end.
+- **Trace it**: wide finger paths for the week's line (rain, hills, waves, zigzags, spirals and more), letters and the week's number, with a green start dot, a "Show me" demo, and pictures at the start and end.
 - **Story time**: the week's 8-page picture story read aloud, story questions with grown-up answer ideas, and "tell the story" picture ordering (first, next, last).
 - **Talk time** and **Sound play** (with a grown-up): say-it-with-me picture words with a ★ when she tries, questions to talk about, and the week's speech sound with a mouth picture and Clear / Not yet tallies.
 - **Dino dance** and **Freeze dance**: 30-second movement cards with dance music, and freeze dance (dance while the music plays, freeze when it stops).
+
+Earlier letters, colors, shapes and number ideas (quick looks, zero, more, big and little, patterns, first and last, sorting) keep coming back in later weeks as spaced review.
+
+**Didi's Island** is her play world (her version of Ana's Meteor Falls town): each day 5 little I-spy quests are hidden on an island drawn for the unit (find 3 of the week's letter, count things, find the color, find the shape, find a word picture or one of her friends), and every friend she hatches lives there and says hi when tapped.
 
 Every finished day earns a sticker, and the week's egg cracks a little more each day: on Day 5 it hatches a new friend (36 friends in all, starting with Didi). Optional 20-second wiggle breaks come after every two games, and a Dance break button is always on the map. **Parents** picks any week and day, turns the music or breaks off, shows sound-play tallies and the talk-time words she has tried, and still opens her older 60-day routine. Her printable packets, guide, toolkit, talk kit and progress book are kept offline on the family computer, not in this public app.
 
@@ -81,7 +85,9 @@ npm run serve
 
 `data/k36.json` and `data/pics.json` are generated from the printable curriculum (weekly scope, decodable word lists, stories, speech decks). `tests/k36.test.mjs` plays every one of the 180 days and checks that each game has exactly one right answer, that reading words are decodable that week, and that every picture exists.
 
-`data/v36.json` is generated from Vivian's printable curriculum (weekly letters, numbers, colors, shapes, strokes, songs, stories, talk words and speech sounds). `tests/v36.test.mjs` builds every game of all 180 days and checks that each has exactly one right answer, that every picture and tracing path exists, and that every song's tune lights each lyric line in order.
+`data/hw.json` is the manuscript stroke library used for Ana's printed handwriting pages (lowercase, capitals and digits on sky, fence, grass and dirt lines).
+
+`data/v36.json` is generated from Vivian's printable curriculum (weekly letters, numbers, colors, shapes, strokes, songs, stories, talk words and speech sounds). `tests/v36.test.mjs` builds every game of all 180 days and checks that each has exactly one right answer, that every picture and tracing path exists, that every song's tune lights each lyric line in order, that earlier number ideas keep coming back, and that Didi's Island has 5 answerable quests every day.
 
 `data/mf.json` and `assets/mf/` hold the Meteor Falls maps and sprites (WebP, cut from the Meteor Falls repository's authored art). `tests/mf.test.mjs` checks that every building, critter spot, stone, sign and friend can be reached from home on all six maps, and that battles on every day of the year have answerable questions from the week's lessons.
 

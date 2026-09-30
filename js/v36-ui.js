@@ -5,8 +5,9 @@
 import {planDay, stationItems, loadV36, saveV36, normalizeV36, defaultV36, completeStation, isDayDone, awardSticker, eggStage, hatchFriend, nextDay, goToDay,
   doneStations, dayKey, stickerFor, logTalk, logSound, logTries, PRAISE, WEEKS, DAYS} from './v36-core.js';
 import {createGames, FREEZE_MOVES} from './v36-games.js';
-import {sfx, setAudio, playTune, playAbc, playDance, stopMusic, unlockAudio} from './v36-audio.js';
+import {sfx, setAudio, playTune, playAbc, playDance, stopMusic, unlockAudio, tunePlan} from './v36-audio.js';
 import {eggSvg} from './v36-art.js';
+import {islandPlan, mountIsland, QUESTS_PER_DAY} from './v36-island.js';
 
 const BG = {grass: ['#e7f5ff', '#d3f9d8'], park: ['#e7f5ff', '#d3f9d8'], farm: ['#fff9db', '#d8f5a2'], garden: ['#e7f5ff', '#d3f9d8'], camp: ['#e5dbff', '#d3f9d8'],
   hill: ['#e7f5ff', '#c3fae8'], pond: ['#e7f5ff', '#d3f9d8'], room: ['#fff4e6', '#ffe8cc'], bath: ['#e3fafc', '#c5f6fa'], sea: ['#d0ebff', '#a5d8ff'],
@@ -51,7 +52,7 @@ export function createV36(ctx) {
   const runCleanup = () => { const list = cleanups; cleanups = []; list.forEach(f => { try { f(); } catch {} }); stopMusic(); glow(null); };
   const env = {
     data, pics, esc, icon, pic, sceneSvg, tracing: ctx.tracing, mascot: ctx.mascot, toast,
-    music: {playTune, playAbc, playDance, stopMusic},
+    music: {playTune, playAbc, playDance, stopMusic, tunePlan},
     musicReady() { if (!settings().sound) ctx.soundOn(); syncAudio(); unlockAudio(); return st.settings.music; },
     sfx: (n, a) => { syncAudio(); sfx(n, a); },
     talk, hear, stopVoice, speakSteps, glow, praise,
@@ -102,6 +103,7 @@ export function createV36(ctx) {
         <button class="v-eggbtn ${stage >= 3 && !hatched ? 'wobbly' : ''}" id="v-egg" aria-label="${hatched ? `${esc(fr.name)} hatched` : 'This week’s egg'}">${hatched ? pic(fr.icon, 'v-friendpic') : eggSvg(stage, u.color, 92)}</button>
         <div><strong>${hatched ? `${esc(fr.name)} hatched!` : 'This week’s egg'}</strong><p>${hatched ? 'A new friend for your friends page.' : stage >= 4 ? 'It’s wiggling! One more day to hatch it!' : `Finish all 5 days to hatch it. ${stage} of 5 done.`}</p>
         <div class="v-eggdays">${Array.from({length: DAYS}, (_, i) => `<span class="${st.stickers[dayKey(p.week, i + 1)] ? 'on' : ''}">${i + 1}</span>`).join('')}</div></div></section>
+      <button class="v-islandbtn" id="v-island" style="--uc:${u.color}">${pic('desert-island', 'v-islandpic')}<span><b>Didi’s Island</b><small>${(st.island[dayKey(p.week, p.day)] || 0) >= QUESTS_PER_DAY ? 'All 5 treasures found today! ★' : `${st.island[dayKey(p.week, p.day)] || 0} of ${QUESTS_PER_DAY} treasures found today`}</small></span>${icon('arrow')}</button>
       <div class="v-bottom-row"><button class="button secondary" id="v-book">${pic('sparkles', 'v-btn-pic')} Stickers <b>${Object.keys(st.stickers).length}</b></button><button class="button secondary" id="v-friends">${pic('hatching-chick', 'v-btn-pic')} Friends <b>${Object.keys(st.friends).length}</b></button></div>
       <button class="button secondary full v-dancebtn" id="v-dance">${pic('woman-dancing', 'v-btn-pic')} Dance break!</button>
       <div class="grownup-note v-note"><p><b>Paper today</b> (Week ${p.week} packet, Day ${p.day}): ${esc(paper)}.</p>${play ? `<p><b>Off-screen play:</b> ${esc(play)}</p>` : ''}<p>Each game takes 2 to 4 minutes. Stop while it’s still fun.</p></div>`);
@@ -109,6 +111,7 @@ export function createV36(ctx) {
     document.querySelector('#v-book').addEventListener('click', () => ctx.navigate('v36book', {tab: 'stickers'}));
     document.querySelector('#v-friends').addEventListener('click', () => ctx.navigate('v36book', {tab: 'friends'}));
     document.querySelector('#v-dance').addEventListener('click', () => { unlockAudio(); wiggleBreak(true); });
+    document.querySelector('#v-island').addEventListener('click', () => { unlockAudio(); ctx.navigate('v36island'); });
     document.querySelector('#v-egg').addEventListener('click', () => { const b = document.querySelector('#v-egg'); b.classList.remove('shake'); void b.offsetWidth; b.classList.add('shake'); syncAudio(); sfx(hatched ? 'hatch' : 'crack');
       hear(hatched ? `${fr.name} says hi!` : stage >= 4 ? 'Your egg is wiggling! Finish today to hatch it!' : 'Something is inside your egg! Finish all your days to hatch it.'); });
     document.querySelector('#v-next-day')?.addEventListener('click', () => { const n = nextDay(p.week, p.day); st = goToDay(st, n.week, n.day); persist(); renderMap(); window.scrollTo({top: 0}); talk(`Week ${n.week}, day ${n.day}. ${data.weeks[n.week - 1].title}! Pick a game.`); });
@@ -218,6 +221,20 @@ export function createV36(ctx) {
     talk(tab === 'friends' ? `Your friends! You have ${nFr}.` : `Your sticker book! You have ${nSt} stickers.`);
   }
 
+  /* ------------------------------------------------------------ Didi's Island (play world with daily quests) */
+  function renderIsland() {
+    syncAudio();
+    const p = currentPlan(); const key = dayKey(p.week, p.day); const u = unitOf(p.week);
+    const iplan = islandPlan(data, p.week, p.day, st.friends);
+    if (/[?&]test=1\b/.test(location.search)) window.__v36island = iplan;      // automated checks only
+    const ienv = {esc, pic, mascot: ctx.mascot, unitColor: u.color, talk, hear, praise, sfx: (n, a) => { syncAudio(); sfx(n, a); },
+      firstTry: ok => { st = logTries(st, ok); },
+      frame: html => { ctx.frame(html); ctx.setCleanup(() => { stopVoice(); glow(null); }); return document.querySelector('.v-island'); }};
+    mountIsland(ienv, iplan, {done: st.island[key] || 0,
+      onQuest: k => { st = {...st, island: {...st.island, [key]: k}}; persist(); },
+      onFinish: () => { persist(); }});
+  }
+
   /* ------------------------------------------------------------ wiggle / dance breaks */
   function wiggleBreak(manual) {
     const m = FREEZE_MOVES[Math.floor(Math.random() * FREEZE_MOVES.length)];
@@ -267,7 +284,7 @@ export function createV36(ctx) {
     setState(next) { st = normalizeV36(next); persist(); plan = null; },
     reset() { st = defaultV36(); persist(); plan = null; },
     hasProgress() { return Object.keys(st.days).length > 0; },
-    renderMap, startStation, renderDayDone, renderBook, parentSection,
+    renderMap, startStation, renderDayDone, renderBook, renderIsland, parentSection,
     stopRun() { runCleanup(); run = null; }
   };
 }

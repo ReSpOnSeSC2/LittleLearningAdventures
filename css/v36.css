@@ -78,7 +78,7 @@
 /* shared choices */
 .v-choices{display:grid;grid-template-columns:repeat(var(--cols,3),minmax(0,1fr));gap:12px;margin-top:10px}
 .v-choices>button,.v-huntcard,.v-wordcard,.v-talkpic,.v-bubble,.v-ntile,.v-card3,.v-gitem{position:relative}
-.v-lchoice,.v-num,.v-nestbtn,.v-tray,.v-sizebtn,.v-pchoice,.v-duck,.v-bin,.v-cupbtn,.v-potbtn,.v-shapebtn,.v-huntcard{background:#fff;border:3px solid var(--line);border-radius:24px;box-shadow:0 5px 0 var(--line);color:var(--ink);padding:10px 6px;min-height:100px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
+.v-lchoice,.v-num,.v-nestbtn,.v-tray,.v-sizebtn,.v-pchoice,.v-duck,.v-bin,.v-cupbtn,.v-potbtn,.v-shapebtn,.v-huntcard,.v-lpchoice,.v-namecard{background:#fff;border:3px solid var(--line);border-radius:24px;box-shadow:0 5px 0 var(--line);color:var(--ink);padding:10px 6px;min-height:100px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
 .v-choices>button:active{transform:translateY(2px)}
 .v-choices>button.correct,.v-huntcard.found{border-color:#40c057;background:#ebfbee;box-shadow:0 5px 0 #b2f2bb}
 .v-choices>button.retry{border-color:#ffa8a8;background:#fff5f5;animation:v-shake .45s}
@@ -156,6 +156,21 @@
 .v-name.done .v-namebank{display:none}.v-name.done .v-namecheer{display:flex}
 .v-ntile{width:72px;height:72px;border-radius:18px;background:#fff;border:3px solid #a5d8ff;box-shadow:0 5px 0 #a5d8ff;font:700 2.6rem/1 Andika,system-ui;color:#1864ab}
 .v-ntile.used{visibility:hidden}.v-ntile.wobble,.v-card3.wobble,.v-huntcard.wobble{animation:v-shake .45s}
+
+/* letter pictures, name cards, drum */
+.v-lpbig{font:700 3.4rem/1 Andika,system-ui;color:#c2255c;background:#fff0f6;border:3px solid #faa2c1;border-radius:20px;width:74px;height:74px;display:grid;place-items:center}
+.v-lpchoice span{font:700 1rem Andika,system-ui}.v-lppic{width:78px;height:78px}
+.v-namecards{gap:12px}
+.v-namecard{font:700 2.5rem/1.1 Andika,system-ui;letter-spacing:.06em;min-height:88px!important;color:var(--ink)}
+.v-beat{text-align:center}
+.v-beatstars{display:flex;gap:6px;justify-content:center;margin:4px 0 12px}
+.v-beatstars span{width:28px;height:28px;border-radius:50%;border:3px solid #ffe066;background:#fff}
+.v-beatstars span.on{background:#fcc419;border-color:#fcc419;animation:v-boing .35s}
+.v-drum{position:relative;width:190px;height:190px;border-radius:50%;background:#fff4e6;border:4px solid #ffd8a8;display:grid;place-items:center;margin:0 auto 6px;box-shadow:0 6px 0 #ffd8a8}
+.v-drum.hit{animation:v-boing .25s}
+.v-drumpic{width:120px;height:120px}
+.v-beatring{position:absolute;inset:-12px;border-radius:50%;border:8px solid transparent;transition:border-color .08s,transform .08s;pointer-events:none}
+.v-beatring.on{border-color:#fab005;transform:scale(1.04)}
 
 /* numbers */
 .v-objs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;max-width:360px;margin:0 auto}
@@ -286,6 +301,37 @@
 .v-bigresult{font:900 2.2rem system-ui;text-align:center;color:#2b8a3e;margin:16px 0}
 .button.v-clear{background:#2f9e44;box-shadow:0 4px 0 #2b8a3e}
 .button.v-notyet{background:#fff;color:#d9480f;border:2px solid #ffd8a8;box-shadow:0 4px 0 #ffd8a8}
+
+/* Didi's Island */
+.v-islandbtn{display:flex;align-items:center;gap:12px;width:100%;margin:0 0 12px;padding:10px 14px;border-radius:24px;border:3px solid color-mix(in srgb,var(--uc) 40%,#fff);background:linear-gradient(135deg,#e7f5ff,#fff9db);box-shadow:0 5px 0 color-mix(in srgb,var(--uc) 30%,#fff);color:var(--ink);text-align:left}
+.v-islandbtn b{display:block;font-size:1.25rem}.v-islandbtn small{color:var(--muted);font-weight:700;font-size:.85rem}.v-islandbtn .icon{margin-left:auto}
+.v-islandpic{width:62px;height:62px}
+.v-island{padding-bottom:16px}
+.v-questbar{display:flex;align-items:center;gap:10px;background:#fff;border:2px solid color-mix(in srgb,var(--uc) 35%,#fff);border-radius:22px;padding:8px 12px;margin:4px 0 10px}
+.v-qhear{background:none;padding:0;flex:none}.v-qhear img{width:58px;height:58px;border-radius:50%;object-fit:cover;border:3px solid #fff;box-shadow:0 3px 8px #0002}
+.v-qtext{display:flex;flex-direction:column;gap:2px;min-width:0}.v-qtext b{font-size:1.3rem;line-height:1.2}
+.v-qstars i{font-style:normal;font-size:1.3rem;color:#dee2e6;margin-right:2px}.v-qstars i.on{color:#fcc419}
+.v-qchoices{display:flex;gap:10px;justify-content:center;margin:0 0 10px}
+.v-qchoices .v-num{min-width:84px;min-height:84px;background:#fff;border:3px solid var(--line);border-radius:22px;box-shadow:0 5px 0 var(--line)}
+.v-qchoices .v-num.correct{border-color:#40c057;background:#ebfbee}.v-qchoices .v-num.retry{animation:v-shake .45s;border-color:#ffa8a8}
+.v-isle{position:relative;width:100%;aspect-ratio:100/130;border-radius:26px;overflow:hidden;border:3px solid #a5d8ff;box-shadow:var(--shadow)}
+.v-isle-bg{position:absolute;inset:0;width:100%;height:100%}
+.v-ibg{position:absolute;transform:translate(-50%,-80%);pointer-events:none}.v-ibg .v-pic{width:100%;height:100%}
+.v-ibg.palm{left:12%;top:44%;width:24%;aspect-ratio:1}.v-ibg.hut{left:86%;top:44%;width:19%;aspect-ratio:1}
+#v-iobjs{position:absolute;inset:0}
+.v-iobj{position:absolute;transform:translate(-50%,-50%);width:19%;aspect-ratio:1;background:none;border:0;padding:0;display:grid;place-items:center;border-radius:50%}
+.v-iobj .v-ipic{width:100%;height:100%;filter:drop-shadow(0 3px 2px #0003)}
+.v-iobj.shape svg{width:88%;height:88%;filter:drop-shadow(0 3px 2px #0003)}
+.v-isign{display:grid;place-items:center;width:86%;height:86%;border-radius:12px;background:#fff9db;border:4px solid #b08968;box-shadow:0 4px 0 #7f5539;font:700 2rem/1 Andika,system-ui;color:#7f5539}
+.v-iobj.got{background:radial-gradient(circle,#fff9 0 55%,transparent 56%);box-shadow:0 0 0 4px #fcc419}
+.v-iobj.got .v-isign{background:#d3f9d8;border-color:#40c057;color:#2b8a3e;box-shadow:0 4px 0 #2b8a3e}
+.v-iobj.x{width:14%}
+.v-iobj.boing{animation:v-boing .4s}.v-iobj.wobble{animation:v-shake .45s}
+.v-inum{position:absolute;top:-6px;right:-6px;min-width:30px;height:30px;border-radius:15px;background:#1c7ed6;color:#fff;font:900 1.1rem/30px system-ui;text-align:center;display:none}
+.v-iobj.got .v-inum:not(:empty){display:block}
+.v-treasure{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#fff8;font:900 1.8rem system-ui;color:#5f3dc4;pointer-events:none;animation:v-fadeaway 3.6s ease-in forwards}
+.v-gem{width:130px;height:130px;animation:v-pop .7s ease-out}
+@keyframes v-fadeaway{0%,70%{opacity:1}100%{opacity:0}}
 
 /* finish, day done, egg hatch */
 .v-finish{text-align:center;padding:26px 10px;position:relative;overflow:hidden}

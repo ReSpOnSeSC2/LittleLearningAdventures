@@ -5,6 +5,7 @@
 import {planDay, loadK36, saveK36, normalizeK36, defaultK36, completeStation, isDayDone, awardSticker, nextDay, goToDay, doneStations, dayKey,
   logSpeech, speechSummary, STATION_INFO, PRAISE, STICKERS, WEEKS, DAYS, stickerFor, isoDate} from './k36-core.js';
 import {createAdventure} from './mf-ui.js';
+import {mountTracePad} from './trace-pad.js';
 
 const BG = {grass: ['#e7f5ff', '#d3f9d8'], park: ['#e7f5ff', '#d3f9d8'], farm: ['#fff9db', '#d8f5a2'], garden: ['#e7f5ff', '#d3f9d8'], camp: ['#e5dbff', '#d3f9d8'],
   hill: ['#e7f5ff', '#c3fae8'], pond: ['#e7f5ff', '#d3f9d8'], room: ['#fff4e6', '#ffe8cc'], vet: ['#f1f3f5', '#e9ecef'], shop: ['#fff4e6', '#ffe8cc'],
@@ -250,7 +251,7 @@ export function createK36(ctx) {
   }
   function renderItem() {
     const it = run.station.items[run.index];
-    const R = {intro: itemIntro, mc: itemMC, readPic: itemRead, readWord: itemRead, readSentence: itemSentence, build: itemBuild, heartIntro: itemHeartIntro, story: itemStory, say: itemSay}[it.type];
+    const R = {intro: itemIntro, mc: itemMC, readPic: itemRead, readWord: itemRead, readSentence: itemSentence, build: itemBuild, heartIntro: itemHeartIntro, story: itemStory, say: itemSay, trace: itemTrace}[it.type];
     R(it);
     if (!run.container) window.scrollTo({top: 0, behavior: 'instant'});
   }
@@ -522,6 +523,35 @@ export function createK36(ctx) {
       document.querySelector('#k-pnext').addEventListener('click', () => { stopVoice(); if (page + 1 < it.pages.length) { page++; draw(); } else { talk('The end! You read the whole story!'); advance(); } });
     };
     draw(); auto(`${it.title}. You read first. Tap Read to me to check.`);
+  }
+
+  /* handwriting: trace the letter on the same four lines as the printed pages */
+  function itemTrace(it) {
+    const gl = ctx.hw?.glyphs?.[it.ch]; const s = data.sounds[it.sound];
+    const upper = it.ch !== it.ch.toLowerCase(); const name = it.ch.toLowerCase() === 'a' ? 'ay' : it.ch.toUpperCase();
+    stationFrame(`<p class="k-prompt">Write ${upper ? 'capital' : 'little'} <span class="k-tglyph">${esc(it.ch)}</span></p>
+      <div class="k-tracehead">${s ? `<button class="k-tkey" id="k-tkey">${pic(s.i, 'k-tkeypic')}<span>${esc(s.key)}</span></button>` : ''}<button class="k-demo" id="k-demo">▶ Show me</button></div>
+      <div class="k-tracepad" id="k-tracepad"></div>
+      <p class="tiny-caption" id="k-tcue">${esc(gl?.cue || 'Start at green dot 1. Follow the path.')}</p>`);
+    const say = `Let's write ${upper ? 'capital' : 'little'} ${name}. ${gl?.cue || ''}`;
+    bindSay(say); auto(say);
+    if (!gl) { nextButton(); return; }
+    let lastHint = 0;
+    const pad = mountTracePad(document.querySelector('#k-tracepad'), {glyph: gl,
+      onHint: kind => { const t = performance.now(); const msg = kind === 'start' ? 'Start at the green dot.' : 'Stay on the path. Go back to the green dot.'; feedback(msg, 'try'); if (t - lastHint > 4000) { lastHint = t; talk(msg); } },
+      onDone: () => {
+        const msg = `You wrote ${upper ? 'capital' : 'little'} ${name}!`; feedback(msg.replace(name, it.ch), 'good'); talk(`${praise()} ${msg}`);
+        sparkle(document.querySelector('#k-tracepad')); nextButton();
+        document.querySelector('#k-actions')?.insertAdjacentHTML('beforeend', '<button class="quiet-help" id="k-tagain">Write it again</button>');
+        document.querySelector('#k-tagain')?.addEventListener('click', () => { pad.again(); feedback(''); });
+      }});
+    ctx.setCleanup?.(() => pad.destroy());
+    if (/[?&]test=1\b/.test(location.search)) window.__k36trace = () => pad.debug();
+    document.querySelector('#k-demo').addEventListener('click', () => { pad.demo(); talk('Watch the green dot. Then you try.'); });
+    document.querySelector('#k-tkey')?.addEventListener('click', () => talk(s.key));
+    const a = document.querySelector('#k-actions');
+    a.innerHTML = '<button class="quiet-help" id="k-tskip">I wrote it on paper · skip</button>';
+    document.querySelector('#k-tskip').addEventListener('click', advance);
   }
 
   /* talk time: say it with a grown-up judge */

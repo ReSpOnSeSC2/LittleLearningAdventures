@@ -69,7 +69,7 @@ export const isoDate = (d = new Date()) => d.toISOString().slice(0, 10);
 
 /* ------------------------------------------------------------------ state */
 export function defaultV36() {
-  return {version: 1, week: 1, day: 1, days: {}, stickers: {}, friends: {}, talk: {}, sounds: {}, stats: {stations: 0, firstTry: 0, tries: 0},
+  return {version: 1, week: 1, day: 1, days: {}, stickers: {}, friends: {}, island: {}, talk: {}, sounds: {}, stats: {stations: 0, firstTry: 0, tries: 0},
     settings: {music: true, breaks: true}, updatedAt: null};
 }
 export function normalizeV36(raw) {
@@ -84,6 +84,7 @@ export function normalizeV36(raw) {
   const stickers = new Set(STICKERS);
   if (raw.stickers && typeof raw.stickers === 'object') for (const [k, v] of Object.entries(raw.stickers)) if (DAY_KEY.test(k) && stickers.has(v)) d.stickers[k] = v;
   if (raw.friends && typeof raw.friends === 'object') for (const [k, v] of Object.entries(raw.friends)) { const n = Number(k); if (Number.isInteger(n) && n >= 1 && n <= WEEKS && v) d.friends[n] = true; }
+  if (raw.island && typeof raw.island === 'object') for (const [k, v] of Object.entries(raw.island)) if (DAY_KEY.test(k)) { const n = clampInt(v, 0, 5, 0); if (n) d.island[k] = n; }
   if (raw.talk && typeof raw.talk === 'object') for (const [k, v] of Object.entries(raw.talk).slice(0, 500)) if (/^[a-z][a-z' .-]{0,30}$/i.test(k)) d.talk[k] = clampInt(v, 0, 9999, 0);
   if (raw.sounds && typeof raw.sounds === 'object') for (const [k, v] of Object.entries(raw.sounds).slice(0, 30)) {
     if (!/^[a-z]{1,2}$/.test(k) || !v || typeof v !== 'object') continue;
@@ -196,6 +197,54 @@ function shapeFind(shape, r, pool) {
 }
 const strokeItem = key => ({type: 'trace', model: {kind: 'stroke', key}});
 const letterTrace = key => ({type: 'trace', model: {kind: 'letter', key}});
+const numberTrace = key => ({type: 'trace', model: {kind: 'number', key: String(key)}});
+
+/* Spaced review: things taught in earlier weeks come back in later games. */
+export const NAME_FRIENDS = ['DIDI', 'PEEP', 'TEDDY', 'HOOT', 'POLLY', 'REXY', 'SHELLY', 'PINKY', 'MOE', 'ZIPPY'];
+export const NAME_LOOKALIKES = ['IVAN', 'VIOLET', 'VIVI', 'NIAV', 'AVIAN'];
+const firstWeeks = new WeakMap();
+export function conceptWeeks(data) {
+  if (firstWeeks.has(data)) return firstWeeks.get(data);
+  const out = {};
+  for (const w of data.weeks) if (w.math && w.math !== 'review' && !(w.math in out)) out[w.math] = w.n;
+  firstWeeks.set(data, out);
+  return out;
+}
+/** One number-game item for an idea taught before this week (never this week's own idea). */
+export function reviewMath(data, week, r, skip = null) {
+  const w = weekData(data, week); const cw = conceptWeeks(data);
+  const ideas = Object.entries(cw).filter(([m, n]) => n < week && m !== skip && m !== 'count').map(([m]) => m);
+  const [word, icon] = pick(data.weeks.slice(0, week).map(x => x.mobj).filter(m => !['clap', 'paw prints', 'bubbles'].includes(m[0])), r) || w.mobj;
+  const top = Math.max(3, Math.min(6, w.nmax));
+  const mode = ideas.length ? pick(ideas, r) : 'give';
+  switch (mode) {
+    case 'quick': { const n = 1 + Math.floor(r() * 4); return {type: 'quick', n, choices: [1, 2, 3, 4]}; }
+    case 'zero': return {type: 'zero', groups: shuffle([0, 1 + Math.floor(r() * 2), 3], r), icon: pick(['egg', 'baby-chick', 'strawberry'], r)};
+    case 'more': { const a = 1 + Math.floor(r() * 3), b = a + 2 + Math.floor(r() * 3); return {type: 'more', ...(r() < 0.5 ? {a, b} : {a: b, b: a}), icon}; }
+    case 'size': return {type: 'size', icon: pick(['sauropod', 'elephant', 'teddy-bear', 'duck', 'house'], r), ask: r() < 0.5 ? 'big' : 'little'};
+    case 'pattern': { const [x, y, wx, wy] = pick([['star', 'red-heart', 'star', 'heart'], ['sun', 'crescent-moon', 'sun', 'moon'], ['red-apple', 'banana', 'apple', 'banana'], ['duck', 'frog', 'duck', 'frog']], r);
+      return {type: 'pattern', seq: [x, y, x, y, x], answer: y, choices: shuffle([x, y], r), words: {[x]: wx, [y]: wy}}; }
+    case 'order': return {type: 'order', icon: 'duck', n: 4 + Math.floor(r() * 2), ask: r() < 0.5 ? 'first' : 'last'};
+    case 'sort': return week > 33 && r() < 0.5
+      ? (([name, item, answer]) => ({type: 'sortPick', mode: 'water', name, item, answer, bins: [['floats', 'sailboat'], ['sinks', 'anchor']], prompt: `Will the ${name} float or sink?`}))(pick([['rock', 'rock', 'sinks'], ['duck', 'duck', 'floats'], ['coin', 'coin', 'sinks'], ['leaf', 'leaf-fluttering-in-wind', 'floats']], r))
+      : (([name, item, answer]) => ({type: 'sortPick', mode: 'pens', name, item, answer, bins: [['cows', 'cow-face'], ['pigs', 'pig-face']], prompt: `Where does the ${name} go?`}))(pick([['cow', 'cow-face', 'cows'], ['pig', 'pig-face', 'pigs']], r));
+    case 'measure': return {type: 'measure', ask: r() < 0.5 ? 'full' : 'empty'};
+    case 'combine': { const a = 1 + Math.floor(r() * 3); return {type: 'combine', a, b: 1, icon: 'tropical-fish', choices: numberChoices(a + 1, r)}; }
+    default: { const n = 1 + Math.floor(r() * top); return {type: 'give', n, icon, word, max: Math.min(10, n + 3)}; }
+  }
+}
+function earlierOf(list, current, r) { const pool = list.filter(x => x !== current); return pool.length ? pick(pool, r) : null; }
+function letterPic(data, w, L, r) {
+  const own = (w.lwords || []).filter(([word]) => word.toUpperCase().startsWith(L));
+  const answer = own.length ? pick(own, r) : data.abc[L];
+  const others = shuffle(Object.keys(data.abc).filter(c => c !== L && !data.abc[c][0].toUpperCase().startsWith(L)), r).slice(0, 2).map(c => data.abc[c]);
+  return {type: 'letterPic', letter: L, answer, choices: shuffle([answer, ...others], r)};
+}
+function nameFind(week, r) {
+  const others = shuffle(NAME_FRIENDS, r).slice(0, week > 18 ? 1 : 2);
+  if (week > 18) others.push(pick(NAME_LOOKALIKES, r));
+  return {type: 'nameFind', name: NAME, choices: shuffle([NAME, ...others], r)};
+}
 
 export function stationItems(data, week, day, kind, mode, {seed = 0} = {}) {
   const w = weekData(data, week);
@@ -206,19 +255,21 @@ export function stationItems(data, week, day, kind, mode, {seed = 0} = {}) {
   const shapesKnown = w.shapesKnown.length >= 3 ? w.shapesKnown : ['circle', 'square', 'triangle'];
   const oneLetter = L.length === 1 ? L : null;
   switch (kind) {
-    case 'song': return [{type: 'song', title: w.song.title, tune: w.song.tune, lines: w.song.lines}];
+    case 'song': return [{type: 'song', title: w.song.title, tune: w.song.tune, lines: w.song.lines}, {type: 'beat', title: w.song.title, tune: w.song.tune, lines: w.song.lines.length, goal: 8}];
     case 'move': return [{type: 'moveCard', name: w.move[0], how: w.move[1], secs: 30}];
     case 'dance': return [{type: 'freeze', rounds: 3}];
-    case 'name': return [{type: 'nameBuild', name: NAME}];
+    case 'name': return [{type: 'nameBuild', name: NAME}, nameFind(week, r)];
     case 'letter': {
       if (mode === 'meet') {
-        if (oneLetter) return [{type: 'letterMeet', letter: oneLetter, words: w.lwords, note: w.lnote}, letterFind(oneLetter, 3, r, week), letterFind(oneLetter, 4, r, week)];
-        if (L === 'name') return [{type: 'letterMeet', letter: 'V', words: w.lwords, note: w.lnote}, {type: 'nameBuild', name: NAME}, letterFind('A', 3, r, week, 'Find A!')];
+        if (oneLetter) return [{type: 'letterMeet', letter: oneLetter, words: w.lwords, note: w.lnote}, letterPic(data, w, oneLetter, r), letterFind(oneLetter, 3, r, week), letterFind(oneLetter, 4, r, week)];
+        if (L === 'name') return [{type: 'letterMeet', letter: 'V', words: w.lwords, note: w.lnote}, {type: 'nameBuild', name: NAME}, letterPic(data, w, 'A', r), letterFind('A', 3, r, week, 'Find A!')];
         return [{type: 'abcSong'}, ...shuffle(known, r).slice(0, 3).map(t => letterFind(t, 4, r, week))];
       }
       if (mode === 'find') {
         const t = oneLetter || pick(L === 'name' ? NAME_TRACE : known, r);
-        return [{type: 'letterPop', target: t, bubbles: shuffle([t, t, t, ...distractors(t, 6, r, week)], r)}, letterFind(t, 4, r, week, `Find ${t} one more time!`)];
+        const back = earlierOf(known, t, r);                       // an earlier letter comes back
+        return [{type: 'letterPop', target: t, bubbles: shuffle([t, t, t, ...distractors(t, 6, r, week)], r)}, letterFind(t, 4, r, week, `Find ${t} one more time!`),
+          ...(back ? [letterFind(back, 4, r, week, `Do you remember ${back}? Find ${back}!`)] : [letterPic(data, w, t, r)])];
       }
       const pool = w.review?.letters?.length ? w.review.letters : w.letters?.length ? w.letters : known;
       return shuffle(pool, r).slice(0, 4).map(t => letterFind(t, 4, r, week));
@@ -227,11 +278,11 @@ export function stationItems(data, week, day, kind, mode, {seed = 0} = {}) {
       if (mode === 'review') {
         const ns = (w.review?.numbers || [1, 2, 3]).filter(x => x > 0 && x <= 10);
         const small = ns.filter(x => x <= 5);
-        return [countItem(pick(ns, r), micon, mword, r), countItem(pick(ns, r), 'star', 'star', r), {type: 'quick', n: pick(small.length ? small.map(x => Math.min(x, 4)) : [2, 3], r), choices: [1, 2, 3, 4]}];
+        return [countItem(pick(ns, r), micon, mword, r), countItem(pick(ns, r), 'star', 'star', r), {type: 'quick', n: pick(small.length ? small.map(x => Math.min(x, 4)) : [2, 3], r), choices: [1, 2, 3, 4]}, reviewMath(data, week, r)];
       }
-      if (N === 0) return [{type: 'zero', groups: shuffle([0, 2, 1], r), icon: 'egg'}, countItem(3, micon, mword, r)];
+      if (N === 0) return [{type: 'zero', groups: shuffle([0, 2, 1], r), icon: 'egg'}, countItem(3, micon, mword, r), reviewMath(data, week, r, 'zero')];
       const other = N === 1 ? 2 : Math.max(1, N - 1);
-      return [countItem(N, micon, mword, r), countItem(other, 'star', 'star', r)];
+      return [countItem(N, micon, mword, r), countItem(other, 'star', 'star', r), week > 3 ? reviewMath(data, week, r, w.math) : {type: 'quick', n: Math.min(3, N + 1), choices: [1, 2, 3]}];
     }
     case 'color': {
       if (w.color === 'mix' && mode !== 'review') return [{type: 'colorMix', a: 'red', b: 'yellow', answer: 'orange', choices: shuffle(['orange', 'green', 'purple'], r)},
@@ -239,21 +290,26 @@ export function stationItems(data, week, day, kind, mode, {seed = 0} = {}) {
       if (mode === 'review' || !data.colors[w.color]) { const pool = w.review?.colors || colorsKnown.slice(-4); return shuffle(pool, r).slice(0, 3).map(c => colorPick(data, c, r, colorsKnown)); }
       const others = colorsKnown.filter(c => c !== w.color && !(['white', 'gray'].includes(c) && ['white', 'gray'].includes(w.color)));
       const otherPool = (others.length >= 2 ? others : ['blue', 'yellow', 'green'].filter(c => c !== w.color)).flatMap(c => data.colors[c].things.slice(0, 3).map(t => [t[0], t[1], c]));
-      return [{type: 'colorHunt', color: w.color, targets: data.colors[w.color].things.slice(0, 3), others: shuffle(otherPool, r).slice(0, 3)}, colorPick(data, w.color, r, colorsKnown)];
+      const backColor = earlierOf(colorsKnown, w.color, r);          // an earlier color comes back
+      return [{type: 'colorHunt', color: w.color, targets: data.colors[w.color].things.slice(0, 3), others: shuffle(otherPool, r).slice(0, 3)}, colorPick(data, w.color, r, colorsKnown),
+        ...(backColor ? [colorPick(data, backColor, r, colorsKnown)] : [])];
     }
     case 'shape': {
       if (mode === 'review' || !data.shapes[w.shape]) { const pool = w.review?.shapes || shapesKnown.slice(-4); return shuffle(pool, r).slice(0, 3).map(s => shapeFind(s, r, shapesKnown)); }
-      return [{type: 'shapeThings', shape: w.shape, things: data.shapes[w.shape].slice(0, 3)}, shapeFind(w.shape, r, shapesKnown), shapeFind(w.shape, r)];
+      const backShape = earlierOf(w.shapesKnown, w.shape, r);        // an earlier shape comes back
+      return [{type: 'shapeThings', shape: w.shape, things: data.shapes[w.shape].slice(0, 3)}, shapeFind(w.shape, r, shapesKnown), backShape ? shapeFind(backShape, r, shapesKnown) : shapeFind(w.shape, r)];
     }
     case 'trace': {
       if (mode === 'review') {
         const ks = (w.review?.strokes || ['down', 'across', 'circle']).filter(k => STROKE_PATHS[k]);
         const lt = pick((w.review?.letters || known).filter(c => c.length === 1), r);
-        return [...shuffle(ks, r).slice(0, 2).map(strokeItem), letterTrace(lt)];
+        const nt = pick((w.review?.numbers || [1, 2, 3]).filter(x => x >= 0 && x <= 9), r) ?? 3;
+        return [...shuffle(ks, r).slice(0, 2).map(strokeItem), letterTrace(lt), numberTrace(nt)];
       }
-      if (w.stroke === 'name') return NAME_TRACE.map(letterTrace);
-      if (w.stroke === 'letters') return LINE_LETTERS.map(letterTrace);
-      return [strokeItem(STROKE_PATHS[w.stroke] ? w.stroke : 'down'), ...(oneLetter ? [letterTrace(oneLetter)] : [])];
+      const num = numberTrace(N <= 9 ? N : 5 + Math.floor(r() * 5));          // the week's number (5 to 9 once she counts to 10)
+      if (w.stroke === 'name') return [...NAME_TRACE.map(letterTrace), num];
+      if (w.stroke === 'letters') return [...LINE_LETTERS.map(letterTrace), num];
+      return [strokeItem(STROKE_PATHS[w.stroke] ? w.stroke : 'down'), ...(oneLetter ? [letterTrace(oneLetter)] : []), num];
     }
     case 'story': {
       if (mode === 'retell') { const p = w.story.pages; return [{type: 'sequence', title: w.story.title, cards: [p[0], p[3], p[p.length - 1]], bg: w.bg}]; }
@@ -262,10 +318,10 @@ export function stationItems(data, week, day, kind, mode, {seed = 0} = {}) {
     case 'talk': return mode === 'ask' ? [{type: 'talkAsk', qs: w.talk.qs, target: w.talk.target, tip: w.talk.tip, pics: w.talk.words.map(x => x[1])}]
       : [{type: 'talkWords', words: w.talk.words, target: w.talk.target, tip: w.talk.tip}];
     case 'sound': { const s = data.sounds[w.sound]; return [{type: 'soundPlay', s: w.sound, label: s.label, mouth: s.mouth, cue: s.cue, words: w.swords}]; }
-    case 'math': return mathItems(w, mode, r, micon, mword);
+    case 'math': return [...mathItems(w, mode, r, micon, mword), reviewMath(data, week, r, mode)];
     case 'review': {
       const t = pick(known.slice(-6), r), n = 1 + Math.floor(r() * Math.max(1, Math.min(5, w.nmax)));
-      return [letterFind(t, 4, r, week), countItem(n, pick(['star', 'balloon', 'baby-chick', 'tropical-fish'], r), 'thing', r), colorPick(data, pick(colorsKnown, r), r, colorsKnown), shapeFind(pick(shapesKnown, r), r, shapesKnown)];
+      return [letterFind(t, 4, r, week), countItem(n, pick(['star', 'balloon', 'baby-chick', 'tropical-fish'], r), 'thing', r), colorPick(data, pick(colorsKnown, r), r, colorsKnown), shapeFind(pick(shapesKnown, r), r, shapesKnown), reviewMath(data, week, r)];
     }
   }
   return [];
@@ -310,6 +366,7 @@ export function itemIcons(item) {
     case 'story': item.pages.forEach(p => p[1].forEach(add)); break;
     case 'sequence': item.cards.forEach(p => p[1].forEach(add)); break;
     case 'talkAsk': item.pics.forEach(add); break;
+    case 'letterPic': item.choices.forEach(x => add(x[1])); break;
   }
   return out;
 }

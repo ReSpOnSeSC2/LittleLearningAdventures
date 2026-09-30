@@ -30,7 +30,7 @@ test('every station makes playable, well-formed games for all 180 days', () => {
     for (const s of planDay(data, w, d).stations) {
       for (const seed of [0, 1, 2]) {
         const items = stationItems(data, w, d, s.kind, s.mode, {seed});
-        assert.ok(items.length >= 1 && items.length <= 5, `${s.id} ${w}-${d} has ${items.length} items`);
+        assert.ok(items.length >= 1 && items.length <= 6, `${s.id} ${w}-${d} has ${items.length} items`);
         for (const it of items) {
           types.add(it.type);
           const where = `${it.type} in ${s.id} week ${w} day ${d}`;
@@ -52,6 +52,7 @@ test('every station makes playable, well-formed games for all 180 days', () => {
             case 'shapeThings': assert.ok(data.shapes[it.shape] && it.things.length === 3, where); break;
             case 'trace':
               if (it.model.kind === 'stroke') assert.ok(STROKE_PATHS[it.model.key] && data.strokes[it.model.key], where);
+              else if (it.model.kind === 'number') assert.ok(tracing.numbers[it.model.key], where);
               else assert.ok(tracing.letters[it.model.key], where);
               break;
             case 'song': assert.ok(TUNE_NAMES.includes(it.tune) && it.lines.length >= 4, where); break;
@@ -63,12 +64,16 @@ test('every station makes playable, well-formed games for all 180 days', () => {
             case 'sortPick': assert.ok(it.bins.some(b => b[0] === it.answer), where); break;
             case 'pattern': assert.ok(it.choices.includes(it.answer) && it.seq.length === 5, where); break;
             case 'nameBuild': assert.equal(it.name, NAME); break;
+            case 'nameFind': assert.ok(it.choices.includes(NAME) && new Set(it.choices).size === it.choices.length && it.choices.length === 3, where); break;
+            case 'letterPic': assert.ok(it.choices.some(c => c[0] === it.answer[0]) && it.choices.length === 3, where);
+              assert.equal(it.choices.filter(c => c[0].toUpperCase().startsWith(it.letter)).length, it.answer[0].toUpperCase().startsWith(it.letter) ? 1 : 0, `${where}: only one picture goes with ${it.letter}`); break;
+            case 'beat': assert.ok(TUNE_NAMES.includes(it.tune) && it.goal >= 4, where); break;
           }
         }
       }
     }
   }
-  for (const t of ['song', 'letterMeet', 'letterFind', 'letterPop', 'abcSong', 'nameBuild', 'count', 'quick', 'give', 'zero', 'more', 'size', 'pattern', 'order', 'sortPick', 'measure',
+  for (const t of ['song', 'beat', 'letterPic', 'nameFind', 'letterMeet', 'letterFind', 'letterPop', 'abcSong', 'nameBuild', 'count', 'quick', 'give', 'zero', 'more', 'size', 'pattern', 'order', 'sortPick', 'measure',
     'combine', 'colorHunt', 'colorPick', 'colorMix', 'shapeThings', 'shapeFind', 'trace', 'story', 'sequence', 'talkWords', 'talkAsk', 'soundPlay', 'moveCard', 'freeze'])
     assert.ok(types.has(t), `game type ${t} is used somewhere in the year`);
 });
@@ -161,4 +166,40 @@ test('every picture the screens and games name directly exists', async () => {
   }
   for (const n of names) assert.ok(pics[n], `missing picture ${n}`);
   for (const u of Object.values(data.units)) assert.ok(pics[u.icon], `unit icon ${u.icon}`);
+});
+
+test('spaced review: every number idea keeps coming back after its first week', () => {
+  const seen = {};
+  for (let w = 1; w <= WEEKS; w++) for (let d = 1; d <= DAYS; d++) for (const s of planDay(data, w, d).stations)
+    for (const it of stationItems(data, w, d, s.kind, s.mode)) (seen[it.type] ||= new Set()).add(w);
+  for (const t of ['quick', 'give', 'zero', 'more', 'size', 'pattern', 'order', 'sortPick']) {
+    const weeks = [...(seen[t] || [])];
+    assert.ok(weeks.length >= 6, `${t} shows up in ${weeks.length} weeks`);
+  }
+  let perDay = 0; for (let w = 1; w <= WEEKS; w++) for (let d = 1; d <= DAYS; d++) for (const s of planDay(data, w, d).stations) perDay += stationItems(data, w, d, s.kind, s.mode).length;
+  assert.ok(perDay / 180 >= 8, `about ${(perDay / 180).toFixed(1)} games a day`);
+});
+
+test("Didi's Island: 5 answerable quests every day, with pictures that exist", async () => {
+  const {islandPlan, islandIcons, QUESTS_PER_DAY} = await import('../js/v36-island.js');
+  for (let w = 1; w <= WEEKS; w++) for (let d = 1; d <= DAYS; d++) {
+    const friends = {}; for (let k = 1; k < w; k++) friends[k] = true;
+    for (const f of [{}, friends]) {
+      const p = islandPlan(data, w, d, f);
+      assert.equal(p.quests.length, QUESTS_PER_DAY, `${w}-${d}`);
+      assert.equal(new Set(p.quests.map(q => q.kind)).size, QUESTS_PER_DAY, `${w}-${d} quest kinds differ`);
+      for (const ic of islandIcons(p)) assert.ok(pics[ic], `island picture ${ic}`);
+      for (const q of p.quests) {
+        const where = `${q.kind} ${w}-${d}`;
+        const targets = q.objects.filter(o => o.target).length;
+        assert.ok(q.objects.length >= 1 && q.objects.length <= 7, where);
+        if (q.kind === 'count') { assert.equal(targets, q.n); assert.ok(q.choices.includes(q.n) && q.n >= 1 && q.n <= 6, where); }
+        else assert.ok(targets >= q.need && q.need >= 1, `${where}: ${targets} targets for ${q.need}`);
+        if (q.kind === 'color') assert.ok(q.objects.every(o => o.target === (o.color === q.color)), where);
+        if (q.kind === 'letters') assert.ok(q.objects.every(o => o.target === (o.ch === q.letter)), where);
+        const spots = new Set(q.objects.map(o => `${Math.round(o.x / 6)}-${Math.round(o.y / 6)}`));
+        assert.equal(spots.size, q.objects.length, `${where}: objects do not overlap`);
+      }
+    }
+  }
 });
