@@ -19,3 +19,7 @@ Source: https://github.com/microsoft/fluentui-emoji
 ## Font: Andika
 
 `fonts/andika-400.woff2` and `fonts/andika-700.woff2` are Andika by SIL International, licensed under the SIL Open Font License 1.1. The full license is in `fonts/OFL-Andika.txt`.
+
+## Meteor Falls art
+
+The characters, critters, buildings, tiles, portraits and effects in `assets/mf/` come from Meteor Falls by Jonathan (https://github.com/ReSpOnSeSC2/Meteor-Falls), resized and compressed for this app. All rights reserved by their author; they are used here with his permission for his children's learning app.

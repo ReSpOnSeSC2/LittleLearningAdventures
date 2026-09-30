@@ -32,5 +32,18 @@ const k36raw=await readFile(resolve(root,'data/k36.json'),'utf8');assert(!/Layma
 const pics=JSON.parse(await readFile(resolve(root,'data/pics.json'),'utf8'));assert(Object.keys(pics).length>300);
 for(const f of ['fonts/andika-400.woff2','fonts/andika-700.woff2','fonts/OFL-Andika.txt','NOTICE.md'])await stat(resolve(root,f));
 let kItems=0;for(let w=1;w<=36;w++)for(let d=1;d<=5;d++){const p=planDay(k36,w,d,{targets:['s','r']});for(const s of p.stations){assert(s.items.length);kItems+=s.items.length;}}
+// Meteor Falls adventure: every image the data names is on disk and cached for offline play
+const mf=JSON.parse(await readFile(resolve(root,'data/mf.json'),'utf8'));assert.equal(mf.version,1);assert.equal(Object.keys(mf.maps).length,6);
+const mfAssets=JSON.parse(sw.match(/const MF_ASSETS = (\[[\s\S]*?\]);/)[1]);const cached=new Set(mfAssets);
+const named=new Set(['fx','logo','title']);
+for(const group of ['heroes','npcs','battlers'])for(const v of Object.values(mf.art[group]))named.add(v.img);
+for(const v of Object.values(mf.art.critters)){named.add(v.img);named.add(v.mini);}
+for(const v of Object.values(mf.art.objects))named.add(v.img);
+for(const v of Object.values(mf.art.busts))named.add(v);
+for(const m of Object.values(mf.maps))named.add(m.ground);
+for(const n of named){assert(cached.has(`./assets/mf/${n}.webp`),`${n} is not cached for offline play`);await stat(resolve(root,`assets/mf/${n}.webp`));}
+for(const f of await readdir(resolve(root,'assets/mf')))assert(cached.has(`./assets/mf/${f}`),`${f} is on disk but not cached`);
+for(const f of ['js/mf-core.js','js/mf-world.js','js/mf-battle.js','js/mf-ui.js','js/mf-audio.js','css/mf.css','data/mf.json'])assert(shell.includes(`./${f}`),`${f} missing from the offline list`);
 console.log(`Verified: kindergarten adventure with 36 weeks, 180 days and ${kItems} game items.`);
+console.log(`Verified: Meteor Falls town maps (6), ${Object.keys(mf.art.critters).length} critters, ${mfAssets.length} adventure images cached for offline play.`);
 console.log(`Verified: 120 lessons, ${trials} math trials, 120 printable day files, ${models} tracing models, install manifest/icons and every offline asset.`);

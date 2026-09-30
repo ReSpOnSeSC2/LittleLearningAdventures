@@ -4,6 +4,7 @@
  */
 import {planDay, loadK36, saveK36, normalizeK36, defaultK36, completeStation, isDayDone, awardSticker, nextDay, goToDay, doneStations, dayKey,
   logSpeech, speechSummary, STATION_INFO, PRAISE, STICKERS, WEEKS, DAYS, stickerFor, isoDate} from './k36-core.js';
+import {createAdventure} from './mf-ui.js';
 
 const BG = {grass: ['#e7f5ff', '#d3f9d8'], park: ['#e7f5ff', '#d3f9d8'], farm: ['#fff9db', '#d8f5a2'], garden: ['#e7f5ff', '#d3f9d8'], camp: ['#e5dbff', '#d3f9d8'],
   hill: ['#e7f5ff', '#c3fae8'], pond: ['#e7f5ff', '#d3f9d8'], room: ['#fff4e6', '#ffe8cc'], vet: ['#f1f3f5', '#e9ecef'], shop: ['#fff4e6', '#ffe8cc'],
@@ -56,6 +57,19 @@ export function createK36(ctx) {
     return `<svg class="k-scene ${cls}" viewBox="0 0 100 66" aria-hidden="true"><rect width="100" height="66" fill="${sky}"/><rect y="58" width="100" height="8" fill="${ground}"/>${data.scenes[bg] || ''}${parts}</svg>`;
   }
   const unitOf = w => data.units[String(data.weeks[w - 1].u)] || data.units['1'];
+
+  /* ------------------------------------------------------------ Meteor Falls adventure (walk-around town and learning battles) */
+  let adv = null;
+  if (ctx.mf) {
+    try {
+      adv = createAdventure({data, mf: ctx.mf, pics, esc, icon, picHtml: n => pic(n), speak: text => speak(text), speakNow: text => (ctx.speakNow ? ctx.speakNow(text) : speak(text)),
+        stopVoice, toast, settings, frame: html => ctx.frame(html), setCleanup: fn => ctx.setCleanup?.(fn), navigate: (s, extra, replace) => ctx.navigate(s, extra, replace),
+        name: ctx.name, stationTitle: id => STATION_INFO[id]?.title || id, stickerCount: () => Object.keys(st.stickers).length,
+        nextDay: () => { const p = currentPlan(); const n = nextDay(p.week, p.day); st = goToDay(st, n.week, n.day); persist(); ctx.navigate('k36', undefined, true); },
+        playItem: (el, item, hooks) => playItem(el, item, hooks)});
+    } catch (e) { adv = null; }
+    if (adv && /[?&]test=1\b/.test(location.search)) window.__mf = adv;      // hook for automated checks only
+  }
 
   /* ------------------------------------------------------------ visuals */
   const DOTS = {1: [[1, 1]], 2: [[0, 0], [2, 2]], 3: [[0, 0], [1, 1], [2, 2]], 4: [[0, 0], [2, 0], [0, 2], [2, 2]], 5: [[0, 0], [2, 0], [1, 1], [0, 2], [2, 2]], 6: [[0, 0], [2, 0], [0, 1], [2, 1], [0, 2], [2, 2]]};
@@ -167,6 +181,7 @@ export function createK36(ctx) {
     return plan;
   }
   function renderMap() {
+    if (adv && adv.enabled()) { run = null; adv.renderWorld(currentPlan(), st); return; }
     const p = currentPlan(); const u = unitOf(p.week); const done = doneStations(st, p.week, p.day);
     const allDone = isDayDone(st, p);
     const sticker = st.stickers[dayKey(p.week, p.day)];
@@ -202,6 +217,14 @@ export function createK36(ctx) {
   }
   function stationFrame(inner, {showSay = true} = {}) {
     const s = run.station; const n = s.items.length;
+    if (run.container) {
+      run.container.innerHTML = `<div class="k-station k-battleq" style="--sc:${s.color}">
+        ${showSay ? `<button class="k-say" id="k-say" aria-label="Hear it again"><img src="${ctx.mascot}" alt="">${icon('sound')}<span>Hear it</span></button>` : ''}
+        <section class="k-card" id="k-card">${inner}</section>
+        <p class="k-feedback" id="k-feedback" role="status" aria-live="polite"></p>
+        <div class="k-actions" id="k-actions"></div></div>`;
+      return;
+    }
     const dots = Array.from({length: n}, (_, i) => `<span class="${i < run.index ? 'done' : i === run.index ? 'current' : ''}"></span>`).join('');
     ctx.frame(`<div class="k-station" style="--sc:${s.color}">
       <div class="k-station-head"><span class="k-station-icon">${pic(s.icon)}</span><strong>${esc(s.title)}</strong><span class="k-count">${Math.min(run.index + 1, n)} of ${n}</span></div>
@@ -214,6 +237,7 @@ export function createK36(ctx) {
   function bindSay(text) { const b = document.querySelector('#k-say'); if (b) b.onclick = () => { if (!settings().sound) { ctx.soundOn(); } speak(text); }; }
   function feedback(msg, kind = '') { const f = document.querySelector('#k-feedback'); if (f) { f.textContent = msg; f.className = `k-feedback ${kind}`; } }
   function nextButton(label = 'Next', primary = true) {
+    if (run?.battle) { const r = run; const first = r._m === 0; document.querySelector('#k-actions')?.replaceChildren(); r.battle = false; setTimeout(() => r.onSolved?.(first), 250); return; }
     const a = document.querySelector('#k-actions');
     a.innerHTML = `<button class="button full ${primary ? '' : 'secondary'}" id="k-next">${esc(label)} ${icon('arrow')}</button>`;
     const b = document.querySelector('#k-next'); b.addEventListener('click', advance); b.focus({preventScroll: true});
@@ -228,9 +252,16 @@ export function createK36(ctx) {
     const it = run.station.items[run.index];
     const R = {intro: itemIntro, mc: itemMC, readPic: itemRead, readWord: itemRead, readSentence: itemSentence, build: itemBuild, heartIntro: itemHeartIntro, story: itemStory, say: itemSay}[it.type];
     R(it);
-    window.scrollTo({top: 0, behavior: 'instant'});
+    if (!run.container) window.scrollTo({top: 0, behavior: 'instant'});
   }
   function praise() { return PRAISE[Math.floor(Math.random() * PRAISE.length)]; }
+  /* One question inside a battle: same games, no Next button. hooks.onSolved(firstTry), hooks.onMiss() */
+  function playItem(container, item, {onSolved, onMiss, intro = null} = {}) {
+    run = {station: {id: 'battle', title: 'Battle', color: '#7048e8', icon: 'star', items: [item]}, index: 0, _m: 0, speech: {}, startedAt: Date.now(),
+      container, onSolved, onMiss, battle: true, intro};
+    Object.defineProperty(run, 'misses', {get() { return this._m; }, set(v) { if (v > this._m) this.onMiss?.(); this._m = v; }});
+    renderItem();
+  }
 
   /* intro card: a new letter or team */
   function itemIntro(it) {
@@ -530,14 +561,16 @@ export function createK36(ctx) {
     const s = run.station;
     // Save speech tallies.
     for (const [k, v] of Object.entries(run.speech)) if (v.t) st = logSpeech(st, {k: k === 'clear' ? 'clear' : k, c: v.c, t: v.t});
+    const firstTime = !doneStations(st, plan.week, plan.day).includes(s.id);
     st = completeStation(st, plan.week, plan.day, s.id);
     let dayDone = false;
     if (isDayDone(st, plan) && !st.stickers[dayKey(plan.week, plan.day)]) { st = awardSticker(st, plan.week, plan.day, plan.unit); dayDone = true; }
     persist();
+    adv?.stationDone(s.id, firstTime);
     const speechLine = Object.entries(run.speech).filter(([, v]) => v.t).map(([k, v]) => `${k === 'clear' ? 'Clear words' : (data.speech.decks.find(d => d.k === k)?.name || k) + ' sound'}: ${v.c} of ${v.t}`).join(' · ');
     ctx.frame(`<section class="k-finish" style="--sc:${s.color}"><div class="k-burst">${pic('glowing-star', 'k-burst-star')}</div><h1>${esc(praise())}</h1><p>You finished <b>${esc(s.title)}</b>!</p>
       ${speechLine ? `<p class="k-speechsum">${esc(speechLine)}</p>` : ''}
-      <button class="button full" id="k-back-map">${dayDone ? 'Get my sticker!' : 'Back to my path'} ${icon('arrow')}</button></section>`, false);
+      <button class="button full" id="k-back-map">${dayDone ? 'Get my sticker!' : (adv && adv.enabled() ? 'Back to the map' : 'Back to my path')} ${icon('arrow')}</button></section>`, false);
     talk(`${praise()} You finished ${s.title}!`);
     document.querySelector('#k-back-map').addEventListener('click', () => {
       if (dayDone) { ctx.navigate('k36done'); return; }
@@ -553,7 +586,7 @@ export function createK36(ctx) {
       <p class="eyebrow">Week ${p.week} · Day ${p.day}</p><h1>Day ${p.day} is done!</h1>
       <div class="k-sticker-reveal">${pic(sticker, 'k-sticker-big')}</div><p>You earned a new sticker!</p>
       ${medal ? `<div class="k-medal" style="--uc:${u.color}">${pic(u.icon)}<span>${esc(u.name)} Champion!</span></div>` : ''}
-      <div class="k-two"><button class="button secondary" id="k-see-book">${pic('sparkles', 'k-btn-pic')} Sticker book</button><button class="button" id="k-done-map">My path ${icon('arrow')}</button></div>
+      <div class="k-two"><button class="button secondary" id="k-see-book">${pic('sparkles', 'k-btn-pic')} Sticker book</button><button class="button" id="k-done-map">${adv && adv.enabled() ? 'Back to the map' : 'My path'} ${icon('arrow')}</button></div>
       <p class="grownup-note">Grown-up: add a sticker to the paper sticker chart too. Next time: Week ${nextDay(p.week, p.day).week}, Day ${nextDay(p.week, p.day).day}.</p></section>`, false);
     talk(`Hooray ${ctx.name}! Day ${p.day} is done! You earned a new sticker!${medal ? ` And a ${u.name} medal!` : ''}`);
     document.querySelector('#k-see-book').addEventListener('click', () => ctx.navigate('k36stickers'));
@@ -594,7 +627,9 @@ export function createK36(ctx) {
       <div class="k-checks" id="k-targets">${decks}</div>
       <h3 style="margin-top:14px">Speech tallies · last 14 days</h3>${sumRows}
       <p class="tiny-caption">Copy these into the Progress Book speech graph. 8 of 10 clear (80%) means move up a step.</p>
-      <label class="toggle-line" for="k-breaks">Swim breaks between games<input id="k-breaks" type="checkbox" ${st.settings.breaks ? 'checked' : ''}></label>`;
+      <label class="toggle-line" for="k-breaks">Swim breaks between games<input id="k-breaks" type="checkbox" ${st.settings.breaks ? 'checked' : ''}></label>
+      ${adv ? adv.parentHtml() : ''}`;
+    if (adv) adv.bindParent(container);
     const days = () => {
       const w = Number(container.querySelector('#k-pweek').value);
       container.querySelector('#k-pdays').innerHTML = Array.from({length: DAYS}, (_, i) => { const d = i + 1; const done = !!st.stickers[dayKey(w, d)]; const cur = w === st.week && d === st.day; return `<button class="parent-day ${cur ? 'current' : ''} ${done ? 'done' : ''}" data-kday="${d}" aria-label="Open day ${d}${done ? ', done' : ''}">${done ? '✓ ' : ''}${d}</button>`; }).join('');
@@ -612,9 +647,13 @@ export function createK36(ctx) {
   return {
     get state() { return st; },
     setState(next) { st = normalizeK36(next); persist(); plan = null; },
-    reset() { st = defaultK36(); persist(); plan = null; },
+    reset() { st = defaultK36(); persist(); plan = null; adv?.setState(null); },
     hasProgress() { return Object.keys(st.days).length > 0; },
     renderMap, startStation, renderDayDone, renderStickers, parentSection, swimBreak,
+    renderBattle() { if (adv) adv.renderBattle(); else ctx.navigate('k36', undefined, true); },
+    get mfState() { return adv ? adv.state : undefined; },
+    setMFState(next) { adv?.setState(next); },
+    adventure: () => adv,
     stopRun() { run = null; }
   };
 }
