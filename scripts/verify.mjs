@@ -17,7 +17,7 @@ for(const id of ['anastasia','vivian']){
     for(const t of d.math.trials){trials++;assert(getMathChoices(t).some(c=>isMathAnswerCorrect(t,c.value)),`${id} day ${d.day}: missing answer`);if(t.kind==='add')assert.equal(t.answer,t.left+t.right);if(t.kind==='subtract')assert.equal(t.answer,t.left-t.right);}
   }
 }
-const sw=await readFile(resolve(root,'sw.js'),'utf8');const match=sw.match(/const APP_SHELL = (\[[\s\S]*?\]);/);assert(match,'Offline manifest missing');const shell=JSON.parse(match[1]);for(const path of shell)if(!['./','./index.html'].includes(path))await stat(resolve(root,path));
+const sw=await readFile(resolve(root,'sw.js'),'utf8');assert.match(sw,/skipWaiting\(\)/,'new versions must take over without closing every window');assert.match(await readFile(resolve(root,'js/app.js'),'utf8'),/controllerchange/,'the page must reload itself after an update');const match=sw.match(/const APP_SHELL = (\[[\s\S]*?\]);/);assert(match,'Offline manifest missing');const shell=JSON.parse(match[1]);for(const path of shell)if(!['./','./index.html'].includes(path))await stat(resolve(root,path));
 const tracing=JSON.parse(await readFile(resolve(root,'data/tracing.json'),'utf8'));
 assert.equal(Object.keys(tracing.letters).filter(k=>/^[A-Z]$/.test(k)).length,26);assert.equal(Object.keys(tracing.numbers).length,10);
 for(const symbol of 'Vivian')assert(tracing.letters[symbol]);

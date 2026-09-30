@@ -55,7 +55,7 @@ npm run serve
 
 `data/k36.json` and `data/pics.json` are generated from the printable curriculum (weekly scope, decodable word lists, stories, speech decks). `tests/k36.test.mjs` plays every one of the 180 days and checks that each game has exactly one right answer, that reading words are decodable that week, and that every picture exists.
 
-GitHub Pages serves `main` from the repository root. `.nojekyll` preserves the static app. When changing cached files, bump the `CACHE_VERSION` in `sw.js`. Keep `APP_SHELL` complete. A new service worker activates after older app windows close; reopen the app to use a downloaded update.
+GitHub Pages serves `main` from the repository root. `.nojekyll` preserves the static app. When changing cached files, bump the `CACHE_VERSION` in `sw.js`. Keep `APP_SHELL` complete. The app checks for a new version whenever it opens or comes back to the foreground; a new service worker takes over immediately and the page reloads itself on the home or map screen (or as soon as the child returns there).
 
 Original lesson activities and generated mascot art. Pictures: Microsoft Fluent Emoji (MIT). Letters: Andika by SIL (OFL), a font made for new readers. See `NOTICE.md`. Educational practice, with adult support; it is not a diagnostic test or a guarantee of mastery.
 
