@@ -27,7 +27,17 @@ export function createK36(ctx) {
   const persist = () => { if (!saveK36(localStorage, st)) toast('Progress cannot be saved on this device right now. You can keep playing.'); };
   const settings = () => ctx.settings();
   const talk = text => { if (settings().sound) speak(text); };
-  const auto = text => { if (settings().autoRead) talk(text); };
+  const takeIntro = () => { const t = run?.intro; if (run) run.intro = null; return t || ''; };
+  const auto = text => { const pre = takeIntro(); if (settings().autoRead) talk(pre ? `${pre} ${text}` : text); };
+  /* A tap that asks to hear something always speaks, even if sound was switched off. */
+  const hearNow = text => { if (ctx.speakNow) ctx.speakNow(text); else speak(text); };
+  function glow(el) { document.querySelectorAll('.k-speaking').forEach(x => x.classList.remove('k-speaking')); if (el) el.classList.add('k-speaking'); }
+  /* Say each step in turn and light up its picture while it is spoken. */
+  function speakSteps(steps, explicit = false) {
+    if (!explicit && !settings().sound) return;
+    if (!ctx.speakList) { (explicit ? hearNow : speak)(steps.map(x => x.text).join('. ')); return; }
+    ctx.speakList(steps.map(x => x.text), i => glow(i >= 0 ? steps[i].el : null), explicit);
+  }
 
   /* ------------------------------------------------------------ pictures */
   function pic(name, cls = '', label = '') {
@@ -186,9 +196,9 @@ export function createK36(ctx) {
     const p = plan && plan.week === st.week && plan.day === st.day ? plan : currentPlan();
     const s = p.stations.find(x => x.id === id);
     if (!s) { ctx.navigate('k36'); return; }
-    run = {station: s, index: 0, misses: 0, speech: {}, startedAt: Date.now()};
+    run = {station: s, index: 0, misses: 0, speech: {}, startedAt: Date.now(), intro: s.say};
     renderItem();
-    auto(s.say);
+    if (run.intro) { const t = run.intro; run.intro = null; auto(t); }
   }
   function stationFrame(inner, {showSay = true} = {}) {
     const s = run.station; const n = s.items.length;
@@ -237,13 +247,17 @@ export function createK36(ctx) {
 
   /* generic multiple choice */
   function itemMC(it) {
-    const target = it.target ? `<button class="k-target" id="k-target" aria-label="${esc(it.target.w)}">${pic(it.target.i, 'k-tpic')}<span>${esc(it.target.w)}</span></button>` : '';
+    const listen = !!it.listen && it.choices.every(c => c.w);
+    const ear = listen ? `<span class="k-earbadge" aria-hidden="true">${icon('sound')}</span>` : '';
+    const target = it.target ? `<button class="k-target" id="k-target" aria-label="${esc(it.target.w)}">${pic(it.target.i, 'k-tpic')}<span>${esc(it.target.w)}</span>${ear}</button>` : '';
     const parts = it.parts ? `<div class="k-parts-say">${it.parts.map(p => `<button class="k-part" data-part="${esc(p)}">${esc(p)}</button>`).join('<span class="k-op">+</span>')}</div>` : '';
     const hear = it.hear ? `<button class="k-bigear" id="k-hear" aria-label="Hear the word">${pic('ear')}<span>Hear it</span></button>` : '';
     const flash = it.flash ? `<div class="k-flashword" id="k-flashword">${heartWordHtml(it.flash, it.tricky)}</div>` : '';
     const cols = it.layout === 'groups' || it.layout === 'bars' ? 1 : it.choices.length === 4 ? 2 : Math.min(3, it.choices.length);
     stationFrame(`<p class="k-prompt">${esc(it.prompt)}</p>${target}${parts}${hear}${flash}<div class="k-visual">${visual(it.visual)}</div>
-      <div class="k-choices layout-${it.layout}" style="--cols:${cols}" ${it.flash || it.visual?.flash ? 'hidden' : ''}>${it.choices.map((c, i) => `<button class="k-choice" data-i="${i}" aria-label="${esc(String(c.w || c.label || c.v))}">${choiceInner(c, it.layout)}</button>`).join('')}</div>`);
+      <div class="k-choices layout-${it.layout}${listen ? ' k-listen' : ''}" style="--cols:${cols}" ${it.flash || it.visual?.flash ? 'hidden' : ''}>${it.choices.map((c, i) => `<button class="k-choice" data-i="${i}" aria-label="${esc(String(c.w || c.label || c.v))}"${listen ? ' aria-pressed="false"' : ''}>${choiceInner(c, it.layout)}${ear}</button>`).join('')}</div>
+      ${listen ? '<p class="k-tapnote">Tap each picture to hear it. Then tap <b>This one!</b></p>' : ''}`);
+    if (listen) return listenMC(it);
     bindSay(it.say);
     document.querySelector('#k-target')?.addEventListener('click', () => talk(it.target.w));
     document.querySelector('#k-hear')?.addEventListener('click', () => talk(it.hear));
@@ -273,6 +287,76 @@ export function createK36(ctx) {
         if (tries >= 2) { const good = [...box.querySelectorAll('.k-choice')].find(x => String(it.choices[Number(x.dataset.i)].v) === String(it.answer)); good?.classList.add('hint'); }
       }
     }));
+  }
+  /* Listening games for children who cannot read yet: every picture says its word when tapped.
+     Tapping only picks a picture; the big check button gives the answer. */
+  function listenSteps(it) {
+    const cards = [...document.querySelectorAll('.k-choices .k-choice')];
+    const steps = [];
+    if (it.parts) {
+      const pb = [...document.querySelectorAll('[data-part]')];
+      steps.push({text: 'Listen.', el: null});
+      it.parts.forEach((p, i) => steps.push({text: p, el: pb[i] || null}));
+      steps.push({text: it.ask || 'Which one is it?', el: null});
+    } else steps.push({text: it.ask || it.prompt, el: document.querySelector('#k-target')});
+    it.choices.forEach((c, i) => steps.push({text: c.w, el: cards[i]}));
+    return steps;
+  }
+  function listenWrong(it, c) {
+    const t = it.target?.w;
+    switch (it.mode) {
+      case 'rhyme': return `${t}, ${c.w}. They do not rhyme. Try another one!`;
+      case 'first': return `${t}, ${c.w}. They start with different sounds. Try another one!`;
+      case 'last': return `${t}, ${c.w}. They end with different sounds. Try another one!`;
+      case 'middle': return `${t}, ${c.w}. Their middle sounds are different. Try another one!`;
+      case 'odd': return `${c.w} starts like the others. Try another one!`;
+      case 'swap': return `${t}, ${c.w}. They do not rhyme. Try another one!`;
+      case 'blendParts': return `Listen: ${it.parts.join(', ')}. Try another one!`;
+      case 'deleteSyl': return `Say ${t} without ${it.drop}. Try another one!`;
+      default: return 'Not that one. Try another one!';
+    }
+  }
+  function bindListenChoices(it, {sayOf, isRight, onRight, onWrong}) {
+    const box = document.querySelector('.k-choices');
+    const a = document.querySelector('#k-actions');
+    a.innerHTML = `<button class="button full k-checkbtn" id="k-check" disabled>${icon('check')} This one!</button>`;
+    const check = document.querySelector('#k-check');
+    let picked = null, solved = false;
+    box.querySelectorAll('.k-choice').forEach(b => b.addEventListener('click', () => {
+      if (solved || b.disabled) return;
+      const c = it.choices[Number(b.dataset.i)];
+      box.querySelectorAll('.k-choice.picked').forEach(x => { x.classList.remove('picked'); x.setAttribute('aria-pressed', 'false'); });
+      b.classList.add('picked'); b.setAttribute('aria-pressed', 'true'); picked = b;
+      check.disabled = false; feedback('');
+      glow(b); hearNow(sayOf(c)); setTimeout(() => b.classList.remove('k-speaking'), 1100);
+    }));
+    check.addEventListener('click', () => {
+      if (!picked || solved) return;
+      const b = picked; const c = it.choices[Number(b.dataset.i)];
+      stopVoice(); glow(null);
+      b.classList.remove('picked'); b.setAttribute('aria-pressed', 'false'); picked = null;
+      if (isRight(c)) { solved = true; b.classList.add('correct'); box.classList.add('solved'); onRight(b, c); }
+      else { b.classList.add('retry'); b.disabled = true; check.disabled = true; onWrong(b, c, box); }
+    });
+  }
+  function listenMC(it) {
+    const steps = () => listenSteps(it);
+    const sayBtn = document.querySelector('#k-say'); if (sayBtn) sayBtn.onclick = () => speakSteps(steps(), true);
+    document.querySelector('#k-target')?.addEventListener('click', e => { glow(e.currentTarget); hearNow(it.target.w); setTimeout(() => glow(null), 1100); });
+    document.querySelectorAll('[data-part]').forEach(b => b.addEventListener('click', () => { glow(b); hearNow(b.dataset.part); setTimeout(() => glow(null), 1100); }));
+    const pre = takeIntro();
+    if (settings().autoRead) speakSteps(pre ? [{text: pre, el: null}, ...steps()] : steps());
+    let tries = 0;
+    bindListenChoices(it, {
+      sayOf: c => c.w,
+      isRight: c => String(c.v) === String(it.answer),
+      onRight: (b) => { const msg = it.right || praise(); feedback(msg, 'good'); talk(msg); sparkle(b); nextButton(); },
+      onWrong: (b, c, box) => {
+        tries++; run.misses++;
+        const msg = listenWrong(it, c); feedback(msg, 'try'); talk(msg);
+        if (tries >= 2) [...box.querySelectorAll('.k-choice')].find(x => String(it.choices[Number(x.dataset.i)].v) === String(it.answer))?.classList.add('hint');
+      }
+    });
   }
   function addAgain(fn) {
     const a = document.querySelector('#k-actions');
@@ -307,16 +391,21 @@ export function createK36(ctx) {
     const isPic = it.type === 'readPic';
     stationFrame(`<p class="k-prompt">${isPic ? 'Read the word. Then tap its picture.' : 'Read the word to your grown-up.'}</p>
       ${tilesHtml(it.tiles)}
-      ${isPic ? `<div class="k-choices layout-pics" style="--cols:3">${it.choices.map((c, i) => `<button class="k-choice" data-i="${i}" aria-label="picture ${i + 1}">${pic(c.i, 'k-cpic')}</button>`).join('')}</div>` :
+      ${isPic ? `<div class="k-choices layout-pics k-listen" style="--cols:3">${it.choices.map((c, i) => `<button class="k-choice" data-i="${i}" aria-label="picture ${i + 1}" aria-pressed="false">${pic(c.i, 'k-cpic')}<span class="k-earbadge" aria-hidden="true">${icon('sound')}</span></button>`).join('')}</div>
+        <p class="k-tapnote">Tap a picture to hear its name. Then tap <b>This one!</b></p>` :
       `<div class="k-parent-check"><p class="tiny-caption">Grown-up: she taps each dot and says the sounds, then swoops to read the word.</p><div class="k-two"><button class="button secondary" id="k-hearword">${icon('sound')} Check it</button><button class="button" id="k-readok">${icon('check')} She read it</button></div></div>`}`);
     bindSay(it.say); auto(it.say); bindTiles();
     if (isPic) {
-      let solved = false, tries = 0; const box = document.querySelector('.k-choices');
-      box.querySelectorAll('.k-choice').forEach(b => b.addEventListener('click', () => {
-        if (solved) return; const c = it.choices[Number(b.dataset.i)];
-        if (c.v === it.answer) { solved = true; b.classList.add('correct'); feedback(`Yes! ${it.w}.`, 'good'); talk(`Yes! ${it.w}.`); sparkle(b); nextButton(); }
-        else { tries++; run.misses++; b.classList.add('retry'); b.disabled = true; feedback('Look at each letter again. Tap the dots and swoop!', 'try'); talk('Look at each letter again. Tap the dots and swoop!'); if (tries >= 2) [...box.children].find(x => it.choices[Number(x.dataset.i)].v === it.answer)?.classList.add('hint'); }
-      }));
+      let tries = 0;
+      bindListenChoices(it, {
+        sayOf: c => c.v,
+        isRight: c => c.v === it.answer,
+        onRight: b => { feedback(`Yes! ${it.w}.`, 'good'); talk(`Yes! ${it.w}.`); sparkle(b); nextButton(); },
+        onWrong: (b, c, box) => {
+          tries++; run.misses++; const msg = 'Look at each letter again. Tap the dots and swoop!'; feedback(msg, 'try'); talk(msg);
+          if (tries >= 2) [...box.querySelectorAll('.k-choice')].find(x => it.choices[Number(x.dataset.i)].v === it.answer)?.classList.add('hint');
+        }
+      });
     } else {
       document.querySelector('#k-hearword').addEventListener('click', () => talk(it.w));
       document.querySelector('#k-readok').addEventListener('click', () => { feedback(praise(), 'good'); talk(`${it.w}! ${praise()}`); nextButton(); });

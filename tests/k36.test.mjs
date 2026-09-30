@@ -168,3 +168,20 @@ test('seeded shuffle keeps every item', () => {
   const r = rng(7); const a = shuffle([1, 2, 3, 4, 5], r);
   assert.deepEqual([...a].sort(), [1, 2, 3, 4, 5]);
 });
+
+test('listening picture games can be played by ear (every picture has a spoken word)', () => {
+  let n = 0;
+  for (let w = 1; w <= WEEKS; w++) for (let d = 1; d <= DAYS; d++) {
+    const plan = planDay(data, w, d, {targets: []});
+    for (const s of plan.stations) for (const it of s.items) {
+      if (it.type !== 'mc' || !it.listen) continue;
+      n++;
+      assert.equal(it.layout, 'pics');
+      assert.ok(it.ask && it.ask.length > 5, `W${w}D${d} ${it.mode}: no spoken question`);
+      for (const c of it.choices) assert.ok(c.w && pics[c.i], `W${w}D${d} ${it.mode}: a picture has no word to say`);
+      if (it.target) assert.ok(it.target.w);
+      if (it.mode === 'deleteSyl') assert.ok(it.drop);
+    }
+  }
+  assert.ok(n > 300, `only ${n} listening games`);
+});

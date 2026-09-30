@@ -224,7 +224,7 @@ function groupBy(data, key, filter = () => true) {
 function pictureChoiceItem(data, r, {mode, target, answer, others, prompt, sayPrompt, right}) {
   const choices = shuffle([answer, ...others], r).map(w => ({v: w, w, i: pic(data, w)}));
   const names = choices.map(c => c.w).join(', ');
-  return {type: 'mc', mode, layout: 'pics', prompt, say: `${sayPrompt} ${names}?`, target: target ? {w: target, i: pic(data, target)} : null, choices, answer, right};
+  return {type: 'mc', mode, layout: 'pics', listen: true, prompt, ask: sayPrompt, say: `${sayPrompt} ${names}?`, target: target ? {w: target, i: pic(data, target)} : null, choices, answer, right};
 }
 const LISTEN_TYPES = {
   rhyme: ['rhyme'], rhyme_make: ['rhyme'], syllables: ['syllables'], first_sound: ['first', 'odd'], onset_rime: ['first', 'rhyme'], blend3: ['count', 'first'],
@@ -260,7 +260,7 @@ function listenItem(data, W, type, r, used) {
     if (!groups.length) return null;
     const g = sample(pick(groups, r), 3, r); const odd = pick(words.filter(w => L[w].fs !== L[g[0]].fs), r);
     const choices = shuffle([...g, odd], r).map(w => ({v: w, w, i: pic(data, w)}));
-    return done({type: 'mc', mode: 'odd', layout: 'pics', prompt: 'Which one does NOT start like the others?', say: `Which one does not start like the others? ${choices.map(c => c.w).join(', ')}?`, choices, answer: odd, right: `Yes! ${odd} starts with a different sound.`}, ...g, odd);
+    return done({type: 'mc', mode: 'odd', layout: 'pics', listen: true, prompt: 'Which one does NOT start like the others?', ask: 'Which one does not start like the others?', say: `Which one does not start like the others? ${choices.map(c => c.w).join(', ')}?`, choices, answer: odd, right: `Yes! ${odd} starts with a different sound.`}, ...g, odd);
   }
   if (type === 'syllables') {
     const byS = {}; for (const w of words) { const s = L[w].s; if (s >= 1 && s <= 3) (byS[s] || (byS[s] = [])).push(w); }
@@ -284,11 +284,11 @@ function listenItem(data, W, type, r, used) {
     if (type === 'blend') {
       const others = sample(data.compounds.filter(x => x.w !== c.w), 2, r);
       const choices = shuffle([c, ...others], r).map(x => ({v: x.w, w: x.w, i: x.i}));
-      return {type: 'mc', mode: 'blendParts', layout: 'pics', prompt: `${c.a} + ${c.b} = ?`, say: `Listen: ${c.a}. ${c.b}. Put it together!`, parts: [c.a, c.b], choices, answer: c.w, right: `Yes! ${c.a}, ${c.b}, ${c.w}!`};
+      return {type: 'mc', mode: 'blendParts', layout: 'pics', listen: true, prompt: `${c.a} + ${c.b} = ?`, ask: 'Put it together! Which one is it?', say: `Listen: ${c.a}. ${c.b}. Put it together!`, parts: [c.a, c.b], choices, answer: c.w, right: `Yes! ${c.a}, ${c.b}, ${c.w}!`};
     }
     const wrong = sample(data.compounds.filter(x => x.w !== c.w && x.ib && x.b !== c.b), 1, r);
     const choices = shuffle([{v: c.b, w: c.b, i: c.ib}, {v: c.w, w: c.w, i: c.i}, ...wrong.map(x => ({v: x.b, w: x.b, i: x.ib}))], r);
-    return {type: 'mc', mode: 'deleteSyl', layout: 'pics', prompt: `Say ${c.w} without ${c.a}.`, say: `Say ${c.w}. Now say it without ${c.a}. What is left?`, target: {w: c.w, i: c.i}, choices, answer: c.b, right: `Yes! ${c.w} without ${c.a} is ${c.b}.`};
+    return {type: 'mc', mode: 'deleteSyl', layout: 'pics', listen: true, prompt: `Say ${c.w} without ${c.a}.`, ask: `Say ${c.w}. Now say it without ${c.a}. What is left?`, drop: c.a, say: `Say ${c.w}. Now say it without ${c.a}. What is left?`, target: {w: c.w, i: c.i}, choices, answer: c.b, right: `Yes! ${c.w} without ${c.a} is ${c.b}.`};
   }
   if (type === 'swap') {
     // Rhymes with the target AND starts like the cue word (sound substitution without phoneme audio).

@@ -226,5 +226,17 @@
 @keyframes k-spin{from{transform:rotate(-90deg) scale(.4)}to{transform:rotate(0) scale(1)}}
 @keyframes k-fall{to{transform:translateY(105vh) rotate(540deg)}}
 @keyframes k-bob{to{transform:translateY(-10px) rotate(4deg)}}
-@media(prefers-reduced-motion:reduce){.k-burst,.k-burst-star,.k-sticker-reveal,.k-confetti i,.k-break-pic,.k-choice.hint,.k-btile.hint,.k-sparkle{animation:none!important}}
+@media(prefers-reduced-motion:reduce){.k-burst,.k-burst-star,.k-sticker-reveal,.k-confetti i,.k-break-pic,.k-choice.hint,.k-btile.hint,.k-sparkle,.k-speaking{animation:none!important}}
 @media(max-width:380px){.k-letter{font-size:2.6rem}.k-rl{font-size:2.7rem}.k-slot{width:54px;height:62px;font-size:2.1rem}.k-btile{width:56px;height:56px}.k-cpic{width:64px;height:64px}.k-checks{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* listen-then-choose picture games: tap a picture to hear it, then press the check button */
+.k-target{position:relative}
+.k-earbadge{position:absolute;top:6px;right:6px;width:28px;height:28px;border-radius:50%;background:#fff4e6;border:2px solid #ffd8a8;color:#d9480f;display:grid;place-items:center;pointer-events:none}
+.k-earbadge .icon{width:16px;height:16px;stroke-width:2.4}
+.k-listen .k-choice.picked{border-color:var(--sc,#7048e8);background:color-mix(in srgb,var(--sc,#7048e8) 10%,#fff);box-shadow:0 0 0 4px color-mix(in srgb,var(--sc,#7048e8) 32%,#fff),0 4px 0 var(--line);transform:translateY(-2px)}
+.k-listen .k-choice.picked .k-earbadge{background:var(--sc,#7048e8);border-color:var(--sc,#7048e8);color:#fff}
+.k-speaking{outline:4px solid #fab005;outline-offset:3px;animation:k-hearpulse .9s ease-in-out infinite}
+.k-speaking .k-earbadge{background:#fab005!important;border-color:#fab005!important;color:#fff!important}
+@keyframes k-hearpulse{0%,100%{outline-color:#fab005}50%{outline-color:#ffe066}}
+.k-tapnote{text-align:center;font-size:.9rem;color:var(--muted);margin:10px 0 0}
+.k-checkbtn:disabled{box-shadow:none}
