@@ -1,6 +1,6 @@
 # Little Learning Adventures
 
-A phone-friendly companion for two home learning programs: Anastasia's 36-week kindergarten adventure and Vivian's 60-day preschool workbook. Built as a small, standalone progressive web app, using the same GitHub Pages installation approach as RallyReady.
+A phone-friendly companion for two home learning programs: Anastasia's 36-week kindergarten adventure and Vivian's 36-week preschool path (age 3). Built as a small, standalone progressive web app, using the same GitHub Pages installation approach as RallyReady.
 
 ## Install on Android
 
@@ -37,22 +37,37 @@ Anastasia's day now opens in a small town from **Meteor Falls** (Jonathan's Eart
 
 Finishing a day earns a sticker; each 6th week ends with a unit medal. Optional swim breaks give a 20-second movement card between games. **Parents** lets you pick any week and day, choose speech sounds, and see two weeks of speech tallies for the Progress Book. The phone's voice reads words and directions; a grown-up models pure letter sounds using the on-screen cue.
 
+## Vivian: 36-week preschool path (age 3)
+
+Vivian's side follows her printed weekly packets (Week and Day are printed on every page). Six units: Hello, Vivi! · Dino Land · Music & Dance · Pets & Farm · Garden & Weather · Splash Zone; weeks 6, 12, 18, 24, 30 and 36 are celebration and review weeks. Each day has 3 or 4 short games on a path, about 2 to 4 minutes each, and every direction is spoken by the phone's voice (she never needs to read):
+
+- **Sing along**: the week's song with a music-box tune (traditional melodies such as Frère Jacques and Twinkle, Twinkle) while each line lights up; "Say the words" reads it line by line. The ABC song lights up every letter as it is sung.
+- **Letter fun**: meet the week's letter with three pictures, find it among 3 or 4 letters (very different letters first, one look-alike later in the year), pop letter bubbles, and build **VIVIAN** with letter tiles.
+- **Count with Didi** and **Number game**: touch-counting with a number for each tap, "how many?" with numerals and dot patterns, give Didi exactly N things (take extras back), quick looks, zero, more, big and little, patterns, first and last, sorting, sink or float, full and empty, and one more.
+- **Colors** and **Shapes**: color hunts, painting a gray picture with the right color, mixing two colors, meeting a shape through real things, and shape finds.
+- **Trace it**: wide finger paths for the week's line (rain, hills, waves, zigzags, spirals and more) and letters, with a green start dot, a "Show me" demo, and pictures at the start and end.
+- **Story time**: the week's 8-page picture story read aloud, story questions with grown-up answer ideas, and "tell the story" picture ordering (first, next, last).
+- **Talk time** and **Sound play** (with a grown-up): say-it-with-me picture words with a ★ when she tries, questions to talk about, and the week's speech sound with a mouth picture and Clear / Not yet tallies.
+- **Dino dance** and **Freeze dance**: 30-second movement cards with dance music, and freeze dance (dance while the music plays, freeze when it stops).
+
+Every finished day earns a sticker, and the week's egg cracks a little more each day: on Day 5 it hatches a new friend (36 friends in all, starting with Didi). Optional 20-second wiggle breaks come after every two games, and a Dance break button is always on the map. **Parents** picks any week and day, turns the music or breaks off, shows sound-play tallies and the talk-time words she has tried, and still opens her older 60-day routine. Her printable packets, guide, toolkit, talk kit and progress book are kept offline on the family computer, not in this public app.
+
 ## Daily use
 
 Each learner has separate local progress. The app follows the workbook's day number, with large controls, spoken instructions, letters, counting and other math, finger paths, movement, discovery, and a short story. The app's matching exercise may replace that paper exercise. A grown-up models isolated letter sounds; the device reads words and directions.
 
 - Kindergarten: approximately 20–30 minutes: 4 or 5 app games plus the printed pages.
-- Preschool age 3: approximately 30 minutes in short play blocks, with optional play extending to 60 minutes. These times include off-screen activities and breaks.
+- Preschool age 3: about 15 to 25 minutes: 3 or 4 short app games, the day's printed pages and an off-screen play idea, with movement breaks. Stop while it is still fun.
 
-**Parents** lets you repeat any day, download Vivian's two printable pages for a day, choose a voice, or export/restore progress (the backup includes Anastasia's kindergarten progress). Download a day's PDF while online; previously downloaded PDFs may also work offline. Lessons and pictures are cached automatically.
+**Parents** lets you choose any week and day, choose a voice, or export/restore progress (one backup file holds both girls' progress). In Vivian's older 60-day routine it can also download that day's two printable pages while online; previously downloaded PDFs may also work offline. Lessons and pictures are cached automatically.
 
-Vivian's revised printouts are almost wordless: large dotted **Vivian**, a letter, a number, a shape, and a simple coloring picture. Each day is exactly two pages. The longer spoken directions and play ideas are in the separate parent guide. Her existing app games are preserved.
+Vivian's older 60-day routine (still available from **Parents**) uses almost wordless printouts: large dotted **Vivian**, a letter, a number, a shape, and a simple coloring picture. Each day is exactly two pages. The longer spoken directions and play ideas are in the separate parent guide. Her existing app games are preserved.
 
-### Vivian's tracing play
+### Tracing play in the older routine
 
 In **Make your marks**, choose today's line, her name, a letter A–Z, a number 0–9, a shape, or blank paper. **Free draw** lets her make marks anywhere. **Follow path** starts at the pink dot and follows each stroke in order; marks outside the guide are ignored. Use the wider guide first and the narrower option when she wants a challenge. Her name is shown one large letter at a time. She can switch modes, clear the page, or move on whenever she likes. Anastasia keeps her kindergarten writing activity.
 
-No accounts, ads, microphone recording, analytics, or progress uploads. Progress is stored on the device in localStorage (Anastasia's kindergarten progress uses its own key, `little-learning-k36-v1`, and the Meteor Falls adventure uses `little-learning-mf-v1`). It does not automatically sync between phones. Export a backup before clearing site data or moving phones. Full names are kept out of this public app and its daily PDF files.
+No accounts, ads, microphone recording, analytics, or progress uploads. Progress is stored on the device in localStorage (Anastasia's kindergarten progress uses its own key, `little-learning-k36-v1`, the Meteor Falls adventure uses `little-learning-mf-v1`, and Vivian's preschool path uses `little-learning-v36-v1`; backups include all of them). It does not automatically sync between phones. Export a backup before clearing site data or moving phones. Full names are kept out of this public app and its daily PDF files.
 
 ## Development and publication
 
@@ -65,6 +80,8 @@ npm run serve
 ```
 
 `data/k36.json` and `data/pics.json` are generated from the printable curriculum (weekly scope, decodable word lists, stories, speech decks). `tests/k36.test.mjs` plays every one of the 180 days and checks that each game has exactly one right answer, that reading words are decodable that week, and that every picture exists.
+
+`data/v36.json` is generated from Vivian's printable curriculum (weekly letters, numbers, colors, shapes, strokes, songs, stories, talk words and speech sounds). `tests/v36.test.mjs` builds every game of all 180 days and checks that each has exactly one right answer, that every picture and tracing path exists, and that every song's tune lights each lyric line in order.
 
 `data/mf.json` and `assets/mf/` hold the Meteor Falls maps and sprites (WebP, cut from the Meteor Falls repository's authored art). `tests/mf.test.mjs` checks that every building, critter spot, stone, sign and friend can be reached from home on all six maps, and that battles on every day of the year have answerable questions from the week's lessons.
 
